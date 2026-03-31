@@ -886,8 +886,8 @@ export default function Page() {
   </div>
 </div>
 
-                 <div className="mt-3 grid grid-cols-1 gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-3 md:grid-cols-2">
-  <div className="flex items-center justify-between gap-2">
+                 <div className="mt-3 space-y-2 rounded-2xl border border-slate-200 bg-slate-50 p-3">
+  <div className="flex items-center justify-between gap-3 rounded-xl bg-white px-3 py-3">
     <span className="text-sm text-slate-700">Factura enviada</span>
     <Switch
       checked={item.facturaEnviada}
@@ -895,7 +895,7 @@ export default function Page() {
     />
   </div>
 
-  <div className="flex items-center justify-between gap-2">
+  <div className="flex items-center justify-between gap-3 rounded-xl bg-white px-3 py-3">
     <span className="text-sm text-slate-700">Cobrado</span>
     <Switch
       checked={item.cobrado}
