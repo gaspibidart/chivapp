@@ -951,6 +951,42 @@ export default function Page() {
             </div>
           </TabsContent>
         </Tabs>
+        <Card className="rounded-[30px] border border-white/60 bg-white/85 shadow-[0_20px_60px_rgba(15,23,42,0.08)] backdrop-blur">
+  <CardContent className="flex flex-col gap-4 p-5 md:flex-row md:items-center md:justify-between">
+    <div>
+      <h3 className="text-base font-semibold text-slate-900">Respaldo</h3>
+      <p className="text-sm text-slate-500">
+        Guardá o recuperá una copia manual de tus campañas.
+      </p>
+    </div>
+
+    <div className="flex flex-col gap-2 sm:flex-row">
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="application/json"
+        className="hidden"
+        onChange={importData}
+      />
+
+      <Button
+        variant="outline"
+        onClick={() => fileInputRef.current?.click()}
+        className="rounded-2xl border-slate-200 bg-white/80"
+      >
+        <Upload className="mr-2 h-4 w-4" /> Importar
+      </Button>
+
+      <Button
+        variant="outline"
+        onClick={exportData}
+        className="rounded-2xl border-slate-200 bg-white/80"
+      >
+        <Download className="mr-2 h-4 w-4" /> Exportar
+      </Button>
+    </div>
+  </CardContent>
+</Card>
       </div>
     </div>
   );
