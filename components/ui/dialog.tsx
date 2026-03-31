@@ -26,17 +26,18 @@ export function Dialog({
 }
 
 export function DialogTrigger({
-  asChild,
   children
 }: {
-  asChild?: boolean;
-  children: React.ReactElement;
+  children: React.ReactElement<any>;
 }) {
   const ctx = React.useContext(DialogContext);
   if (!ctx) return children;
 
   return React.cloneElement(children, {
-    onClick: () => ctx.setOpen(true)
+    onClick: (...args: any[]) => {
+      children.props?.onClick?.(...args);
+      ctx.setOpen(true);
+    }
   });
 }
 

@@ -567,7 +567,7 @@ export default function Page() {
             </Button>
 
             <Dialog open={open} onOpenChange={setOpen}>
-              <DialogTrigger asChild>
+              <DialogTrigger>
                 <Button
                   onClick={openNewCampaign}
                   className="rounded-2xl bg-slate-900 px-5 py-6 text-sm font-medium text-white shadow-lg hover:bg-slate-800"
