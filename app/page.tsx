@@ -543,31 +543,8 @@ export default function Page() {
             </p>
           </div>
 
-          <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:justify-end">
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="application/json"
-              className="hidden"
-              onChange={importData}
-            />
-            <Button
-              variant="outline"
-              onClick={() => fileInputRef.current?.click()}
-              className="rounded-2xl border-slate-200 bg-white/80"
-            >
-              <Upload className="mr-2 h-4 w-4" /> Importar
-            </Button>
-            <Button
-              variant="outline"
-              onClick={exportData}
-              className="rounded-2xl border-slate-200 bg-white/80"
-            >
-              <Download className="mr-2 h-4 w-4" /> Exportar
-            </Button>
-
-            <Dialog open={open} onOpenChange={setOpen}>
-  <DialogTrigger>
+<div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:justify-end">
+  <Dialog open={open} onOpenChange={setOpen}>  <DialogTrigger>
     <Button
       onClick={openNewCampaign}
       className="rounded-2xl bg-slate-900 px-5 py-6 text-sm font-medium text-white shadow-lg hover:bg-slate-800"
