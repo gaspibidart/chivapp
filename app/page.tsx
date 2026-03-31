@@ -886,22 +886,23 @@ export default function Page() {
   </div>
 </div>
 
-                    <div className="grid grid-cols-2 gap-3 rounded-2xl border border-slate-200 bg-slate-50/80 p-3">
-                      <div className="flex items-center justify-between gap-3">
-                        <span className="text-sm text-slate-700">Factura</span>
-                        <Switch
-                          checked={item.facturaEnviada}
-                          onCheckedChange={() => toggleFactura(item.id)}
-                        />
-                      </div>
-                      <div className="flex items-center justify-between gap-3">
-                        <span className="text-sm text-slate-700">Cobrado</span>
-                        <Switch
-                          checked={item.cobrado}
-                          onCheckedChange={() => toggleCobrado(item.id)}
-                        />
-                      </div>
-                    </div>
+                 <div className="mt-3 grid grid-cols-1 gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-3 md:grid-cols-2">
+  <div className="flex items-center justify-between gap-2">
+    <span className="text-sm text-slate-700">Factura enviada</span>
+    <Switch
+      checked={item.facturaEnviada}
+      onCheckedChange={() => toggleFactura(item.id)}
+    />
+  </div>
+
+  <div className="flex items-center justify-between gap-2">
+    <span className="text-sm text-slate-700">Cobrado</span>
+    <Switch
+      checked={item.cobrado}
+      onCheckedChange={() => toggleCobrado(item.id)}
+    />
+  </div>
+</div>
 
                     <div className="flex items-center gap-2">
                       <Button
