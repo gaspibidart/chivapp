@@ -820,7 +820,7 @@ export default function Page() {
                   </div>
                   <Select value={monthFilter} onValueChange={setMonthFilter}>
                     <SelectTrigger className="w-full rounded-2xl border-slate-200 bg-white md:w-[180px]">
-                      <SelectValue placeholder="Mes" />
+                     <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">Todos los meses</SelectItem>
@@ -833,7 +833,7 @@ export default function Page() {
                   </Select>
                   <Select value={statusFilter} onValueChange={setStatusFilter}>
                     <SelectTrigger className="w-full rounded-2xl border-slate-200 bg-white md:w-[180px]">
-                      <SelectValue placeholder="Estado" />
+                      <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">Todos</SelectItem>
