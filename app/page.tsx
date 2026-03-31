@@ -536,10 +536,10 @@ export default function Page() {
               ChivAPP
             </p>
             <h1 className="text-2xl font-bold tracking-tight text-slate-900 md:text-3xl">
-              Panel de campañas y cobros
+              CONTROL DE CAMPAÑAS
             </h1>
             <p className="mt-1 text-sm text-slate-500">
-              Guardado local, backup JSON, dashboard y calendario.
+              Toda la datita organizada
             </p>
           </div>
 
@@ -567,156 +567,151 @@ export default function Page() {
             </Button>
 
             <Dialog open={open} onOpenChange={setOpen}>
-              <DialogTrigger>
-                <Button
-                  onClick={openNewCampaign}
-                  className="rounded-2xl bg-slate-900 px-5 py-6 text-sm font-medium text-white shadow-lg hover:bg-slate-800"
-                >
-                  <Plus className="mr-2 h-4 w-4" /> Nueva campaña
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-h-[90vh] max-w-3xl overflow-y-auto rounded-3xl border border-white/60 bg-white/95 backdrop-blur-xl">
-                <DialogHeader>
-                  <DialogTitle className="text-xl text-slate-900">
-                    {editingId ? "Editar campaña" : "Agregar campaña"}
-                  </DialogTitle>
-                </DialogHeader>
+  <DialogTrigger>
+    <Button
+      onClick={openNewCampaign}
+      className="rounded-2xl bg-slate-900 px-5 py-6 text-sm font-medium text-white shadow-lg hover:bg-slate-800"
+    >
+      <Plus className="mr-2 h-4 w-4" /> Nueva campaña
+    </Button>
+  </DialogTrigger>
 
-                <div className="grid grid-cols-1 gap-4 py-2 md:grid-cols-2">
-                  <Input
-                    placeholder="Marca"
-                    value={form.marca}
-                    onChange={(e) => setForm({ ...form, marca: e.target.value })}
-                    className="rounded-2xl border-slate-200"
-                  />
-                  <Input
-                    placeholder="Campaña"
-                    value={form.campana}
-                    onChange={(e) => setForm({ ...form, campana: e.target.value })}
-                    className="rounded-2xl border-slate-200"
-                  />
+  <DialogContent className="max-h-[90vh] max-w-3xl overflow-y-auto rounded-3xl border border-white/60 bg-white/95 backdrop-blur-xl">
+    <DialogHeader>
+      <DialogTitle className="text-xl text-slate-900">
+        {editingId ? "Editar campaña" : "Agregar campaña"}
+      </DialogTitle>
+    </DialogHeader>
 
-                  <ContentSelector
-                    value={form.contenidoItems}
-                    onChange={(contenidoItems) =>
-                      setForm({ ...form, contenidoItems })
-                    }
-                  />
+    <div className="grid grid-cols-1 gap-4 py-2 md:grid-cols-2">
+      <Input
+        placeholder="Marca"
+        value={form.marca}
+        onChange={(e) => setForm({ ...form, marca: e.target.value })}
+        className="rounded-2xl border-slate-200"
+      />
 
-                  <div className="space-y-2">
-                    <p className="text-sm font-medium text-slate-500">
-                      Fecha de publicación
-                    </p>
-                    <Input
-                      type="date"
-                      value={form.publicacion}
-                      onChange={(e) =>
-                        setForm({ ...form, publicacion: e.target.value })
-                      }
-                      className="rounded-2xl border-slate-200"
-                    />
-                  </div>
+      <Input
+        placeholder="Campaña"
+        value={form.campana}
+        onChange={(e) => setForm({ ...form, campana: e.target.value })}
+        className="rounded-2xl border-slate-200"
+      />
 
-                  <div className="space-y-2">
-  <p className="text-sm font-medium text-slate-500">Pago a (días)</p>
-  <Input type="number" value={form.pagoA} onChange={(e) => setForm({ ...form, pagoA: Number(e.target.value || 0) })} className="rounded-2xl border-slate-200" />
+      <ContentSelector
+        value={form.contenidoItems}
+        onChange={(contenidoItems) => setForm({ ...form, contenidoItems })}
+      />
 
-                  </div>
+      <div className="space-y-2">
+        <p className="text-sm font-medium text-slate-500">Fecha de publicación</p>
+        <Input
+          type="date"
+          value={form.publicacion}
+          onChange={(e) => setForm({ ...form, publicacion: e.target.value })}
+          className="rounded-2xl border-slate-200"
+        />
+      </div>
 
-                  <div className="space-y-2 md:col-span-2">
-                    <p className="text-sm font-medium text-slate-500">Fee</p>
-                    <Input
-                      type="number"
-                      placeholder="6000000"
-                      value={form.fee}
-                      onChange={(e) => setForm({ ...form, fee: e.target.value })}
-                      className="rounded-2xl border-slate-200"
-                    />
-                  </div>
+      <div className="space-y-2">
+        <p className="text-sm font-medium text-slate-500">Pago a (días)</p>
+        <Input
+          type="number"
+          value={form.pagoA}
+          onChange={(e) => setForm({ ...form, pagoA: Number(e.target.value || 0) })}
+          className="rounded-2xl border-slate-200"
+        />
+      </div>
 
-                  <div className="space-y-2">
-                    <p className="text-sm font-medium text-slate-500">
-                      Tipo de cobro
-                    </p>
-                    <Select
-                      value={form.tipoCobro}
-                      onValueChange={(tipoCobro: "cash" | "transferencia") =>
-                        setForm({ ...form, tipoCobro })
-                      }
-                    >
-                      <SelectTrigger className="rounded-2xl border-slate-200">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="cash">Cash</SelectItem>
-                        <SelectItem value="transferencia">
-                          Transferencia
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+      <div className="space-y-2 md:col-span-2">
+        <p className="text-sm font-medium text-slate-500">Fee</p>
+        <Input
+          type="number"
+          placeholder="6000000"
+          value={form.fee}
+          onChange={(e) => setForm({ ...form, fee: e.target.value })}
+          className="rounded-2xl border-slate-200"
+        />
+      </div>
 
-                  <div className="flex items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                    <span className="text-sm text-slate-700">
-                      Factura enviada
-                    </span>
-                    <Switch
-                      checked={form.facturaEnviada}
-                      onCheckedChange={(checked) =>
-                        setForm({
-                          ...form,
-                          facturaEnviada: Boolean(checked)
-                        })
-                      }
-                    />
-                  </div>
+      <div className="space-y-2">
+        <p className="text-sm font-medium text-slate-500">Tipo de cobro</p>
+        <Select
+  value={form.tipoCobro}
+  onValueChange={(tipoCobro) =>
+    setForm({ ...form, tipoCobro: tipoCobro as "cash" | "transferencia" })
+  }
+>
+          <SelectTrigger className="rounded-2xl border-slate-200">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="cash">Cash</SelectItem>
+            <SelectItem value="transferencia">Transferencia</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
 
-                  <div className="flex items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4 md:col-span-2">
-                    <span className="text-sm text-slate-700">Cobrado</span>
-                    <Switch
-                      checked={form.cobrado}
-                      onCheckedChange={(checked) =>
-                        setForm({ ...form, cobrado: Boolean(checked) })
-                      }
-                    />
-                  </div>
-                </div>
+      <div className="flex items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+        <span className="text-sm text-slate-700">Factura enviada</span>
+        <Switch
+          checked={form.facturaEnviada}
+          onCheckedChange={(checked) =>
+            setForm({
+              ...form,
+              facturaEnviada: Boolean(checked),
+            })
+          }
+        />
+      </div>
 
-                <div className="flex flex-col-reverse gap-2 pt-2 sm:flex-row sm:justify-end">
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      setOpen(false);
-                      setEditingId(null);
-                      setForm(emptyForm);
-                    }}
-                    className="rounded-2xl border-slate-200 px-6"
-                  >
-                    Cancelar
-                  </Button>
-                  <Button
-                    onClick={saveCampaign}
-                    className="rounded-2xl bg-slate-900 px-6 text-white hover:bg-slate-800"
-                  >
-                    {editingId ? "Guardar cambios" : "Guardar campaña"}
-                  </Button>
-                </div>
-              </DialogContent>
-            </Dialog>
+      <div className="flex items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4 md:col-span-2">
+        <span className="text-sm text-slate-700">Cobrado</span>
+        <Switch
+          checked={form.cobrado}
+          onCheckedChange={(checked) =>
+            setForm({ ...form, cobrado: Boolean(checked) })
+          }
+        />
+      </div>
+    </div>
+
+    <div className="flex flex-col-reverse gap-2 pt-2 sm:flex-row sm:justify-end">
+      <Button
+        variant="outline"
+        onClick={() => {
+          setOpen(false);
+          setEditingId(null);
+          setForm(emptyForm);
+        }}
+        className="rounded-2xl border-slate-200 px-6"
+      >
+        Cancelar
+      </Button>
+
+      <Button
+        onClick={saveCampaign}
+        className="rounded-2xl bg-slate-900 px-6 text-white hover:bg-slate-800"
+      >
+        {editingId ? "Guardar cambios" : "Guardar campaña"}
+      </Button>
+    </div>
+  </DialogContent>
+</Dialog>
           </div>
         </motion.div>
 
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
           <KPI
-            title="Total general"
+            title="Total General"
             value={currency(totals.totalGeneral)}
-            hint="Suma de fee de todas las campañas"
+            hint="Campañas sin comisión"
             icon={CircleDollarSign}
           />
           <KPI
-            title="Tu total"
+            title="Mi Total"
             value={currency(totals.totalYo)}
-            hint="Cash o transferencia, según corresponda"
+            hint="La del bolsillo"
             icon={Wallet}
           />
           <KPI
@@ -862,16 +857,34 @@ export default function Page() {
                     </div>
 
                     <div className="grid grid-cols-1 gap-2 text-sm md:grid-cols-3">
-                      <div><span className="text-slate-500">Contenido:</span> {item.contenido}</div>
-                      <div><span className="text-slate-500">Publicación:</span> {new Date(item.publicacion).toLocaleDateString("es-AR")}</div>
-                      <div><span className="text-slate-500">Pago a:</span> {item.pagoA} días</div>
-                      <div><span className="text-slate-500">Cobro:</span> {new Date(item.cobro).toLocaleDateString("es-AR")}</div>
-                      <div><span className="text-slate-500">Fee:</span> {currency(item.fee)}</div>
-                      <div><span className="text-slate-500">Cobro por:</span> {item.tipoCobro === "transferencia" ? "Transferencia" : "Cash"}</div>
-                      <div className="font-semibold text-slate-900 md:col-span-3">
-                        <span className="text-slate-500">Monto:</span> {currency(amountValue(item))}
-                      </div>
-                    </div>
+  <div className="font-bold text-slate-900">
+    <span className="font-bold text-slate-900">YO:</span> {currency(amountValue(item))}
+  </div>
+  <div>
+    <span className="text-slate-500">
+      {item.tipoCobro === "transferencia" ? "VP + IVA:" : "VP Cash:"}
+    </span>{" "}
+    {currency(item.tipoCobro === "transferencia" ? item.ivaVane : item.vpCash)}
+  </div>
+  <div>
+    <span className="text-slate-500">Fee:</span> {currency(item.fee)}
+  </div>
+  <div>
+    <span className="text-slate-500">Pago a:</span> {item.pagoA} días
+  </div>
+  <div>
+    <span className="text-slate-500">Cobro:</span> {new Date(item.cobro).toLocaleDateString("es-AR")}
+  </div>
+  <div>
+    <span className="text-slate-500">Publicación:</span> {new Date(item.publicacion).toLocaleDateString("es-AR")}
+  </div>
+  <div>
+    <span className="text-slate-500">Cobro por:</span> {item.tipoCobro === "transferencia" ? "Transferencia" : "Cash"}
+  </div>
+  <div className="md:col-span-3">
+    <span className="text-slate-500">Contenido:</span> {item.contenido}
+  </div>
+</div>
 
                     <div className="grid grid-cols-2 gap-3 rounded-2xl border border-slate-200 bg-slate-50/80 p-3">
                       <div className="flex items-center justify-between gap-3">
