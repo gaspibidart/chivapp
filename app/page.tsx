@@ -316,27 +316,20 @@ const STORAGE_KEY = "chivapp-data-v1";
 
 const emptyForm: FormState = {
   id: null,
-  marca: "",
-  campana: "",
-  contenidoItems: createContenidoState(),
-  publicacion: "",
-  pagoA: 30,
-  fee: "",
-  tipoCobro: "cash",
-  facturaEnviada: false,
-  cobrado: false
+ marca: "",
+campana: "",
+contenidoItems: createContenidoState(),
+publicacion: "",
+pagoA: 30,
+fee: "",
+tipoCobro: "cash",
+facturaEnviada: false,
+cobrado: false
 };
 
 export default function Page() {
-  const [campaigns, setCampaigns] = useState<Campaign[]>(() => {
-    if (typeof window === "undefined") return initialCampaigns;
-    try {
-      const saved = window.localStorage.getItem(STORAGE_KEY);
-      return saved ? JSON.parse(saved) : initialCampaigns;
-    } catch {
-      return initialCampaigns;
-    }
-  });
+  const [campaigns, setCampaigns] = useState(initialCampaigns);
+  const [loadingCampaigns, setLoadingCampaigns] = useState(true);
 
   const [search, setSearch] = useState("");
   const [monthFilter, setMonthFilter] = useState("all");
