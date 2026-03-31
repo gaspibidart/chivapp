@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { createPortal } from "react-dom";
 
 type DialogContextType = {
   open: boolean;
@@ -30,7 +31,6 @@ export function Dialog({
     } else {
       document.body.style.overflow = "";
     }
-
     return () => {
       document.body.style.overflow = "";
     };
@@ -66,21 +66,24 @@ export function DialogContent({
   className?: string;
 }) {
   const { open, setOpen } = useDialog();
+  const [mounted, setMounted] = React.useState(false);
 
-  if (!open) return null;
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
 
-  return (
-    <div className="fixed inset-0 z-[9999]">
-      {/* Overlay */}
+  if (!mounted || !open) return null;
+
+  return createPortal(
+    <div className="fixed inset-0 z-[99999]">
       <div
         className="absolute inset-0 bg-black/40 backdrop-blur-sm"
         onClick={() => setOpen(false)}
       />
 
-      {/* Mobile / Desktop container */}
-      <div className="absolute inset-0 flex items-end justify-center p-0 md:items-center md:p-6">
+      <div className="absolute inset-0 flex items-end justify-center md:items-center">
         <div
-          className={`relative h-[100dvh] w-full overflow-y-auto rounded-none bg-white shadow-2xl md:h-auto md:max-h-[90vh] md:max-w-3xl md:rounded-[32px] ${className}`}
+          className={`relative h-[100dvh] w-full overflow-y-auto bg-white shadow-2xl md:h-auto md:max-h-[90vh] md:max-w-3xl md:rounded-[32px] ${className}`}
           onClick={(e) => e.stopPropagation()}
         >
           <button
@@ -93,7 +96,8 @@ export function DialogContent({
           <div className="min-h-full p-4 pt-14 md:p-8 md:pt-8">{children}</div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 
@@ -107,8 +111,10 @@ export function DialogHeader({
 
 export function DialogTitle({
   children,
+  className = "",
 }: {
   children: React.ReactNode;
+  className?: string;
 }) {
-  return <h2 className="text-2xl font-bold text-slate-900">{children}</h2>;
+  return <h2 className={`text-2xl font-bold text-slate-900 ${className}`}>{children}</h2>;
 }
