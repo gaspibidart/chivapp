@@ -328,7 +328,7 @@ cobrado: false
 };
 
 export default function Page() {
-  const [campaigns, setCampaigns] = useState(initialCampaigns);
+const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [loadingCampaigns, setLoadingCampaigns] = useState(true);
 
   const [search, setSearch] = useState("");
@@ -340,9 +340,55 @@ export default function Page() {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(campaigns));
-  }, [campaigns]);
+  const loadCampaigns = async () => {
+    try {
+      const response = await fetch("/api/campaigns", {
+        cache: "no-store",
+      });
+
+      const data = await response.json();
+
+      if (Array.isArray(data)) {
+        const normalized = data.map((item: any) => ({
+          id: Number(item.id),
+          marca: item.marca || "",
+          campana: item.campana || "-",
+          contenidoItems: createContenidoState(),
+          contenido: item.contenido || "-",
+          publicacion: item.publicacion || "",
+          pagoA: Number(item.pagoA || 0),
+          cobro: item.cobro || "",
+          fee: Number(item.fee || 0),
+          tipoCobro:
+            (item.tipoCobro === "transferencia" ? "transferencia" : "cash") as
+              | "cash"
+              | "transferencia",
+          yoCash: Number(item.yoCash || 0),
+          vpCash: Number(item.vpCash || 0),
+          ivaVane: Number(item.ivaVane || 0),
+          yoMasIva: Number(item.yoMasIva || 0),
+          facturaEnviada:
+            String(item.facturaEnviada).toLowerCase() === "true" ||
+            item.facturaEnviada === true,
+          cobrado:
+            String(item.cobrado).toLowerCase() === "true" ||
+            item.cobrado === true,
+        }));
+
+        setCampaigns(normalized);
+      } else {
+        setCampaigns([]);
+      }
+    } catch (error) {
+      console.error("Error cargando campañas:", error);
+      setCampaigns([]);
+    } finally {
+      setLoadingCampaigns(false);
+    }
+  };
+
+  loadCampaigns();
+}, []);
 
   const filteredCampaigns = useMemo(() => {
     return campaigns.filter((c) => {
@@ -435,65 +481,122 @@ export default function Page() {
     setCampaigns((prev) => prev.filter((item) => item.id !== campaignId));
   };
 
-  const saveCampaign = () => {
-    if (!form.marca || !form.publicacion || !form.fee) return;
+ const saveCampaign = async () => {
+  if (!form.marca || !form.publicacion || !form.fee) return;
 
-    const publicationDate = new Date(form.publicacion);
-    const cobroDate = new Date(publicationDate);
-    cobroDate.setDate(cobroDate.getDate() + Number(form.pagoA || 0));
+  const publicationDate = new Date(form.publicacion);
+  const cobroDate = new Date(publicationDate);
+  cobroDate.setDate(cobroDate.getDate() + Number(form.pagoA || 0));
 
-    const fee = Number(form.fee);
-    const yoCash = Math.round(fee * 0.758);
-    const vpCash = fee - yoCash;
-    const esTransferencia = form.tipoCobro === "transferencia";
-    const ivaVane = esTransferencia ? Math.round(vpCash * 1.21) : 0;
-    const yoMasIva = esTransferencia ? Math.round(yoCash * 0.9475) : 0;
-    const contenido = buildContenido(form.contenidoItems);
+  const fee = Number(form.fee);
+  const yoCash = Math.round(fee * 0.758);
+  const vpCash = fee - yoCash;
+  const esTransferencia = form.tipoCobro === "transferencia";
+  const ivaVane = esTransferencia ? Math.round(vpCash * 1.21) : 0;
+  const yoMasIva = esTransferencia ? Math.round(yoCash * 0.9475) : 0;
+  const contenido = buildContenido(form.contenidoItems);
 
-    const payload: Campaign = {
-      id: editingId || Date.now(),
-      marca: form.marca,
-      campana: form.campana || "-",
-      contenidoItems: form.contenidoItems,
-      contenido,
-      publicacion: form.publicacion,
-      pagoA: Number(form.pagoA || 0),
-      cobro: cobroDate.toISOString().slice(0, 10),
-      fee,
-      tipoCobro: form.tipoCobro,
-      yoCash,
-      vpCash,
-      ivaVane,
-      yoMasIva,
-      facturaEnviada: form.facturaEnviada,
-      cobrado: form.cobrado
-    };
+  const payload = {
+    id: editingId || Date.now(),
+    marca: form.marca,
+    campana: form.campana || "-",
+    contenidoItems: form.contenidoItems,
+    contenido,
+    publicacion: form.publicacion,
+    pagoA: Number(form.pagoA || 0),
+    cobro: cobroDate.toISOString().slice(0, 10),
+    fee,
+    tipoCobro: form.tipoCobro,
+    yoCash,
+    vpCash,
+    ivaVane,
+    yoMasIva,
+    facturaEnviada: form.facturaEnviada,
+    cobrado: form.cobrado
+  };
 
+  try {
     if (editingId) {
       setCampaigns((prev) =>
         prev.map((item) => (item.id === editingId ? payload : item))
       );
     } else {
-      setCampaigns((prev) => [payload, ...prev]);
+      const response = await fetch("/api/campaigns", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(payload)
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result?.error || "No se pudo guardar la campaña");
+      }
+
+      const refreshed = await fetch("/api/campaigns", {
+        cache: "no-store"
+      });
+
+      const refreshedData = await refreshed.json();
+
+      if (Array.isArray(refreshedData)) {
+        const normalized = refreshedData.map((item: any) => ({
+          id: Number(item.id),
+          marca: item.marca || "",
+          campana: item.campana || "-",
+          contenidoItems: createContenidoState(),
+          contenido: item.contenido || "-",
+          publicacion: item.publicacion || "",
+          pagoA: Number(item.pagoA || 0),
+          cobro: item.cobro || "",
+          fee: Number(item.fee || 0),
+          tipoCobro:
+  (item.tipoCobro === "transferencia" ? "transferencia" : "cash") as
+    | "cash"
+    | "transferencia",
+          yoCash: Number(item.yoCash || 0),
+          vpCash: Number(item.vpCash || 0),
+          ivaVane: Number(item.ivaVane || 0),
+          yoMasIva: Number(item.yoMasIva || 0),
+          facturaEnviada:
+            String(item.facturaEnviada).toLowerCase() === "true" ||
+            item.facturaEnviada === true,
+          cobrado:
+            String(item.cobrado).toLowerCase() === "true" ||
+            item.cobrado === true
+        }));
+
+        setCampaigns(normalized);
+      } else {
+        setCampaigns((prev) => [payload, ...prev]);
+      }
     }
 
     setForm(emptyForm);
     setEditingId(null);
     setOpen(false);
-  };
+   } catch (error) {
+    console.error(error);
+    if (typeof window !== "undefined") {
+      window.alert("No pude guardar la campaña en Google Sheets.");
+    }
+  }
+};
 
-  const exportData = () => {
-    if (typeof window === "undefined") return;
-    const blob = new Blob([JSON.stringify(campaigns, null, 2)], {
-      type: "application/json"
-    });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "chivapp-backup.json";
-    a.click();
-    URL.revokeObjectURL(url);
-  };
+const exportData = () => {
+  if (typeof window === "undefined") return;
+  const blob = new Blob([JSON.stringify(campaigns, null, 2)], {
+    type: "application/json"
+  });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "chivapp-backup.json";
+  a.click();
+  URL.revokeObjectURL(url);
+};
 
   const importData = async (
     event: React.ChangeEvent<HTMLInputElement>
