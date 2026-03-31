@@ -584,16 +584,14 @@ export default function Page() {
                   </div>
 
                   <div className="space-y-2">
-                    <p className="text-sm font-medium text-slate-500">
-                      Pago a (días)
-                    </p>
-                    <Input
-                      type="number"
-                      value={form.pagoA}
-                      onChange={(e) => setForm({ ...form, pagoA: pagoA: Number(e.target.value || 0) })}
-                      className="rounded-2xl border-slate-200"
-                    />
-                  </div>
+  <p className="text-sm font-medium text-slate-500">Pago a (días)</p>
+  <Input
+    type="number"
+    value={form.pagoA}
+    onChange={(e) => setForm({ ...form, pagoA: Number(e.target.value || 0) })}
+    className="rounded-2xl border-slate-200"
+  />
+</div>
 
                   <div className="space-y-2 md:col-span-2">
                     <p className="text-sm font-medium text-slate-500">Fee</p>
