@@ -2,15 +2,27 @@
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
-import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
-import { Button } from "../components/ui/button";
-import { Input } from "../components/ui/input";
-import { Badge } from "../components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "../components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select";
-import { Checkbox } from "../components/ui/checkbox";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
-import { Switch } from "../components/ui/switch";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Switch } from "@/components/ui/switch";
 import {
   BarChart3,
   CalendarDays,
@@ -56,6 +68,19 @@ type Campaign = {
   vpCash: number;
   ivaVane: number;
   yoMasIva: number;
+  facturaEnviada: boolean;
+  cobrado: boolean;
+};
+
+type FormState = {
+  id: number | null;
+  marca: string;
+  campana: string;
+  contenidoItems: ContenidoState;
+  publicacion: string;
+  pagoA: number;
+  fee: string;
+  tipoCobro: "cash" | "transferencia";
   facturaEnviada: boolean;
   cobrado: boolean;
 };
@@ -135,6 +160,27 @@ const initialCampaigns: Campaign[] = [
     yoMasIva: 1326500,
     facturaEnviada: true,
     cobrado: true
+  },
+  {
+    id: 3,
+    marca: "APEROL",
+    campana: "Verano",
+    contenidoItems: createContenidoState({
+      reel: { checked: true, qty: 1 },
+      story: { checked: true, qty: 2 }
+    }),
+    contenido: "1 Reel + 2 Stories",
+    publicacion: "2026-02-10",
+    pagoA: 30,
+    cobro: "2026-03-28",
+    fee: 4000000,
+    tipoCobro: "cash",
+    yoCash: 3200000,
+    vpCash: 800000,
+    ivaVane: 0,
+    yoMasIva: 0,
+    facturaEnviada: false,
+    cobrado: false
   }
 ];
 
@@ -280,7 +326,7 @@ function ContentSelector({
 
 const STORAGE_KEY = "chivapp-data-v1";
 
-const emptyForm = {
+const emptyForm: FormState = {
   id: null,
   marca: "",
   campana: "",
@@ -288,7 +334,7 @@ const emptyForm = {
   publicacion: "",
   pagoA: 30,
   fee: "",
-  tipoCobro: "cash" as "cash" | "transferencia",
+  tipoCobro: "cash",
   facturaEnviada: false,
   cobrado: false
 };
@@ -309,7 +355,7 @@ export default function Page() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [open, setOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
-  const [form, setForm] = useState(emptyForm);
+  const [form, setForm] = useState<FormState>(emptyForm);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
@@ -584,14 +630,21 @@ export default function Page() {
                   </div>
 
                   <div className="space-y-2">
-<Input type="number" value={form.pagoA} onChange={(e) => setForm({ ...form, pagoA: Number(e.target.value || 0) })} className="rounded-2xl border-slate-200" />
-  <Input
-    type="number"
-    value={form.pagoA}
-    onChange={(e) => setForm({ ...form, pagoA: Number(e.target.value || 0) })}
-    className="rounded-2xl border-slate-200"
-  />
-</div>
+                    <p className="text-sm font-medium text-slate-500">
+                      Pago a (días)
+                    </p>
+                    <Input
+                      type="number"
+                      value={form.pagoA}
+                      onChange={(e) =>
+                        setForm({
+                          ...form,
+                          pagoA: Number(e.target.value || 0)
+                        })
+                      }
+                      className="rounded-2xl border-slate-200"
+                    />
+                  </div>
 
                   <div className="space-y-2 md:col-span-2">
                     <p className="text-sm font-medium text-slate-500">Fee</p>
@@ -702,6 +755,234 @@ export default function Page() {
             icon={FileCheck}
           />
         </div>
+
+        <Tabs defaultValue="dashboard" className="space-y-6">
+          <TabsList className="grid h-auto w-full grid-cols-3 rounded-2xl border border-white/60 bg-white/80 p-1 shadow-sm backdrop-blur md:w-fit">
+            <TabsTrigger value="dashboard" className="rounded-xl px-3 py-2 md:px-5">
+              Dashboard
+            </TabsTrigger>
+            <TabsTrigger value="campanas" className="rounded-xl px-3 py-2 md:px-5">
+              Campañas
+            </TabsTrigger>
+            <TabsTrigger value="calendario" className="rounded-xl px-3 py-2 md:px-5">
+              Calendario
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="dashboard" className="space-y-6">
+            <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
+              <Card className="rounded-[30px] border border-white/60 bg-white/85 shadow-[0_20px_60px_rgba(15,23,42,0.08)] backdrop-blur xl:col-span-2">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-lg text-slate-900">
+                    <BarChart3 className="h-5 w-5 text-emerald-600" />
+                    Ingresos por mes
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="h-[280px] md:h-[320px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={monthlyData}>
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                        <XAxis dataKey="month" tickLine={false} axisLine={false} />
+                        <YAxis
+                          tickFormatter={(v) => `${Math.round(v / 1000000)}M`}
+                          tickLine={false}
+                          axisLine={false}
+                        />
+                        <Tooltip formatter={(value) => currency(Number(value))} />
+                        <Bar dataKey="total" radius={[14, 14, 0, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="rounded-[30px] border border-white/60 bg-white/85 shadow-[0_20px_60px_rgba(15,23,42,0.08)] backdrop-blur">
+                <CardHeader>
+                  <CardTitle className="text-lg text-slate-900">Próximo cobro</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {nextPending ? (
+                    <>
+                      <div className="rounded-3xl border border-slate-200 bg-gradient-to-br from-slate-50 to-cyan-50 p-4">
+                        <p className="text-sm text-slate-500">Marca</p>
+                        <p className="text-xl font-bold text-slate-900">{nextPending.marca}</p>
+                        <p className="mt-3 text-sm text-slate-500">Fecha de cobro</p>
+                        <p className="font-semibold text-slate-900">
+                          {new Date(nextPending.cobro).toLocaleDateString("es-AR")}
+                        </p>
+                        <p className="mt-3 text-sm text-slate-500">Monto</p>
+                        <p className="font-semibold text-slate-900">
+                          {currency(amountValue(nextPending))}
+                        </p>
+                        <p className="mt-3 text-sm text-slate-500">Contenido</p>
+                        <p className="font-medium text-slate-800">{nextPending.contenido}</p>
+                      </div>
+                      <div>{statusBadge(nextPending)}</div>
+                    </>
+                  ) : (
+                    <p className="text-sm text-slate-500">No hay campañas pendientes.</p>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="campanas" className="space-y-6">
+            <Card className="rounded-[30px] border border-white/60 bg-white/85 shadow-[0_20px_60px_rgba(15,23,42,0.08)] backdrop-blur">
+              <CardContent className="p-5">
+                <div className="flex flex-col gap-3 md:flex-row">
+                  <div className="relative flex-1">
+                    <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                    <Input
+                      value={search}
+                      onChange={(e) => setSearch(e.target.value)}
+                      placeholder="Buscar por marca, campaña o contenido"
+                      className="rounded-2xl border-slate-200 bg-white pl-10"
+                    />
+                  </div>
+                  <Select value={monthFilter} onValueChange={setMonthFilter}>
+                    <SelectTrigger className="w-full rounded-2xl border-slate-200 bg-white md:w-[180px]">
+                      <SelectValue placeholder="Mes" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todos los meses</SelectItem>
+                      {monthNames.map((month, index) => (
+                        <SelectItem key={month} value={String(index)}>
+                          {month}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Select value={statusFilter} onValueChange={setStatusFilter}>
+                    <SelectTrigger className="w-full rounded-2xl border-slate-200 bg-white md:w-[180px]">
+                      <SelectValue placeholder="Estado" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todos</SelectItem>
+                      <SelectItem value="cobrado">Cobrado</SelectItem>
+                      <SelectItem value="facturado">Factura enviada</SelectItem>
+                      <SelectItem value="pendiente">Pendiente</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </CardContent>
+            </Card>
+
+            <div className="grid grid-cols-1 gap-4">
+              {filteredCampaigns.map((item) => (
+                <Card
+                  key={item.id}
+                  className="overflow-hidden rounded-[24px] border border-white/60 bg-white/90 shadow-[0_10px_40px_rgba(15,23,42,0.06)] backdrop-blur"
+                >
+                  <CardContent className="space-y-4 p-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="text-lg font-semibold text-slate-900">{item.marca}</p>
+                        <p className="text-sm text-slate-500">{item.campana}</p>
+                      </div>
+                      {statusBadge(item)}
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-2 text-sm md:grid-cols-3">
+                      <div><span className="text-slate-500">Contenido:</span> {item.contenido}</div>
+                      <div><span className="text-slate-500">Publicación:</span> {new Date(item.publicacion).toLocaleDateString("es-AR")}</div>
+                      <div><span className="text-slate-500">Pago a:</span> {item.pagoA} días</div>
+                      <div><span className="text-slate-500">Cobro:</span> {new Date(item.cobro).toLocaleDateString("es-AR")}</div>
+                      <div><span className="text-slate-500">Fee:</span> {currency(item.fee)}</div>
+                      <div><span className="text-slate-500">Cobro por:</span> {item.tipoCobro === "transferencia" ? "Transferencia" : "Cash"}</div>
+                      <div className="font-semibold text-slate-900 md:col-span-3">
+                        <span className="text-slate-500">Monto:</span> {currency(amountValue(item))}
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3 rounded-2xl border border-slate-200 bg-slate-50/80 p-3">
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="text-sm text-slate-700">Factura</span>
+                        <Switch
+                          checked={item.facturaEnviada}
+                          onCheckedChange={() => toggleFactura(item.id)}
+                        />
+                      </div>
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="text-sm text-slate-700">Cobrado</span>
+                        <Switch
+                          checked={item.cobrado}
+                          onCheckedChange={() => toggleCobrado(item.id)}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex-1 rounded-xl border-slate-200 bg-white"
+                        onClick={() => openEditCampaign(item)}
+                      >
+                        <Pencil className="mr-2 h-4 w-4" /> Editar
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="rounded-xl border-slate-200 bg-white"
+                        onClick={() => deleteCampaign(item.id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="calendario" className="space-y-6">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+              {monthNames.map((month, index) => {
+                const items = campaigns.filter((c) => parseMonth(c.cobro) === index);
+                const total = items.reduce((acc, item) => acc + amountValue(item), 0);
+                return (
+                  <motion.div key={month} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
+                    <Card className="h-full rounded-[30px] border border-white/60 bg-white/85 shadow-[0_20px_60px_rgba(15,23,42,0.08)] backdrop-blur">
+                      <CardHeader>
+                        <div className="flex items-center justify-between gap-3">
+                          <CardTitle className="text-lg text-slate-900">{month}</CardTitle>
+                          <Badge className="rounded-full border border-slate-200 bg-white px-3 py-1 text-slate-700 hover:bg-white">
+                            {currency(total)}
+                          </Badge>
+                        </div>
+                      </CardHeader>
+                      <CardContent className="space-y-3">
+                        {items.length ? (
+                          items.map((item) => (
+                            <div key={item.id} className="rounded-3xl border border-slate-200 bg-slate-50/80 p-4">
+                              <div className="flex items-start justify-between gap-3">
+                                <div>
+                                  <p className="font-semibold text-slate-900">{item.marca}</p>
+                                  <p className="text-sm text-slate-500">
+                                    {new Date(item.cobro).toLocaleDateString("es-AR")}
+                                  </p>
+                                </div>
+                                {statusBadge(item)}
+                              </div>
+                              <p className="mt-3 text-sm text-slate-500">{item.contenido}</p>
+                              <p className="mt-2 text-sm font-semibold text-slate-900">
+                                {currency(amountValue(item))}
+                              </p>
+                            </div>
+                          ))
+                        ) : (
+                          <p className="text-sm text-slate-500">Sin campañas cargadas.</p>
+                        )}
+                      </CardContent>
+                    </Card>
+                  </motion.div>
+                );
+              })}
+            </div>
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );
