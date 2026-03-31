@@ -804,40 +804,40 @@ export default function Page() {
             <Card className="rounded-[30px] border border-white/60 bg-white/85 shadow-[0_20px_60px_rgba(15,23,42,0.08)] backdrop-blur">
               <CardContent className="p-5">
                 <div className="flex flex-col gap-3 md:flex-row">
-                  <div className="relative flex-1">
-                    <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                    <Input
-                      value={search}
-                      onChange={(e) => setSearch(e.target.value)}
-                      placeholder="Buscar por marca, campaña o contenido"
-                      className="rounded-2xl border-slate-200 bg-white pl-10"
-                    />
-                  </div>
-                  <Select value={monthFilter} onValueChange={setMonthFilter}>
-                    <SelectTrigger className="w-full rounded-2xl border-slate-200 bg-white md:w-[180px]">
-                     <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Todos los meses</SelectItem>
-                      {monthNames.map((month, index) => (
-                        <SelectItem key={month} value={String(index)}>
-                          {month}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <Select value={statusFilter} onValueChange={setStatusFilter}>
-                    <SelectTrigger className="w-full rounded-2xl border-slate-200 bg-white md:w-[180px]">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Todos</SelectItem>
-                      <SelectItem value="cobrado">Cobrado</SelectItem>
-                      <SelectItem value="facturado">Factura enviada</SelectItem>
-                      <SelectItem value="pendiente">Pendiente</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+  <div className="relative flex-1">
+    <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+    <Input
+      value={search}
+      onChange={(e) => setSearch(e.target.value)}
+      placeholder="Buscar por marca, campaña o contenido"
+      className="h-12 rounded-2xl border-slate-200 bg-white pl-11"
+    />
+  </div>
+
+  <select
+    value={monthFilter}
+    onChange={(e) => setMonthFilter(e.target.value)}
+    className="h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm text-slate-900 md:w-[200px]"
+  >
+    <option value="all">Todos los meses</option>
+    {monthNames.map((month, index) => (
+      <option key={month} value={String(index)}>
+        {month}
+      </option>
+    ))}
+  </select>
+
+  <select
+    value={statusFilter}
+    onChange={(e) => setStatusFilter(e.target.value)}
+    className="h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm text-slate-900 md:w-[180px]"
+  >
+    <option value="all">Todos</option>
+    <option value="cobrado">Cobrado</option>
+    <option value="facturado">Factura enviada</option>
+    <option value="pendiente">Pendiente</option>
+  </select>
+</div>
               </CardContent>
             </Card>
 
