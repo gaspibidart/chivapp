@@ -349,7 +349,14 @@ tipoCobro: "cash",
 facturaEnviada: false,
 cobrado: false
 };
-
+const parseMoneyInput = (value: string | number) => {
+  const cleaned = String(value ?? "").replace(/[^\d]/g, "");
+  return cleaned ? Number(cleaned) : 0;
+};
+const normalizeDateInput = (value: string) => {
+  if (!value) return "";
+  return String(value).slice(0, 10);
+};
 export default function Page() {
 const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [loadingCampaigns, setLoadingCampaigns] = useState(true);
@@ -485,7 +492,7 @@ const [isSaving, setIsSaving] = useState(false);
       marca: campaign.marca,
       campana: campaign.campana === "-" ? "" : campaign.campana,
       contenidoItems: campaign.contenidoItems || createContenidoState(),
-      publicacion: campaign.publicacion,
+     publicacion: normalizeDateInput(campaign.publicacion),
       pagoA: campaign.pagoA,
       fee: String(campaign.fee),
       tipoCobro: campaign.tipoCobro || "cash",
@@ -533,7 +540,9 @@ const [isSaving, setIsSaving] = useState(false);
   const cobroDate = new Date(publicationDate);
   cobroDate.setDate(cobroDate.getDate() + Number(form.pagoA || 0));
 
-  const fee = Number(form.fee);
+  const fee = parseMoneyInput(form.fee);
+  console.log("FEE INGRESADO EN FORM:", form.fee);
+console.log("FEE LIMPIO A GUARDAR:", fee);
 const esTransferencia = form.tipoCobro === "transferencia";
 
 let yoCash = 0;
@@ -614,9 +623,9 @@ const yoMasIva = 0;
         campana: item.campana || "-",
         contenidoItems: createContenidoState(),
         contenido: item.contenido || "-",
-        publicacion: item.publicacion || "",
+        publicacion: normalizeDateInput(item.publicacion || ""),
         pagoA: Number(item.pagoA || 0),
-        cobro: item.cobro || "",
+        cobro: normalizeDateInput(item.cobro || ""),
         fee: Number(item.fee || 0),
         tipoCobro:
           (item.tipoCobro === "transferencia" ? "transferencia" : "cash") as
@@ -750,12 +759,19 @@ const exportData = () => {
       <div className="space-y-2">
         <p className="text-sm font-medium text-slate-500">Pago a (días)</p>
         <Input
-          type="number"
-          value={form.pagoA}
-          onChange={(e) => setForm({ ...form, pagoA: Number(e.target.value || 0) })}
-          className="rounded-2xl border-slate-200"
-        />
-      </div>
+  type="text"
+  inputMode="numeric"
+  placeholder="5000000"
+  value={form.fee}
+  onChange={(e) =>
+    setForm({
+      ...form,
+      fee: e.target.value.replace(/[^\d]/g, "")
+    })
+  }
+  className="rounded-2xl border-slate-200"
+  autoComplete="off"
+/>
 
       <div className="space-y-2 md:col-span-2">
         <p className="text-sm font-medium text-slate-500">Fee</p>
