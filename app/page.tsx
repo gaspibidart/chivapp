@@ -732,7 +732,7 @@ if (previewEsTransferencia) {
     </Button>
   </DialogTrigger>
 
-  <DialogContent className="max-h-[90vh] max-w-3xl overflow-y-auto rounded-3xl border border-white/60 bg-white/95 backdrop-blur-xl">
+    <DialogContent className="max-h-[90vh] max-w-3xl overflow-y-auto rounded-3xl border border-white/60 bg-white/95 backdrop-blur-xl">
     <DialogHeader>
       <DialogTitle className="text-xl text-slate-900">
         {editingId ? "Editar campaña" : "Agregar campaña"}
@@ -772,19 +772,12 @@ if (previewEsTransferencia) {
       <div className="space-y-2">
         <p className="text-sm font-medium text-slate-500">Pago a (días)</p>
         <Input
-  type="text"
-  inputMode="numeric"
-  placeholder="5000000"
-  value={form.fee}
-  onChange={(e) =>
-    setForm({
-      ...form,
-      fee: e.target.value.replace(/[^\d]/g, "")
-    })
-  }
-  className="rounded-2xl border-slate-200"
-  autoComplete="off"
-/>
+          type="number"
+          value={form.pagoA}
+          onChange={(e) => setForm({ ...form, pagoA: Number(e.target.value || 0) })}
+          className="rounded-2xl border-slate-200"
+        />
+      </div>
 
       <div className="space-y-2 md:col-span-2">
         <p className="text-sm font-medium text-slate-500">Fee</p>
@@ -849,7 +842,7 @@ if (previewEsTransferencia) {
           onCheckedChange={(checked) =>
             setForm({
               ...form,
-              facturaEnviada: Boolean(checked),
+              facturaEnviada: Boolean(checked)
             })
           }
         />
