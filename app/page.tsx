@@ -357,6 +357,19 @@ const normalizeDateInput = (value: string) => {
   if (!value) return "";
   return String(value).slice(0, 10);
 };
+
+const formatDateAR = (value: string) => {
+  if (!value) return "-";
+
+  const normalized = String(value).slice(0, 10);
+  const date = new Date(normalized + "T00:00:00");
+
+  if (isNaN(date.getTime())) return "-";
+
+  return date.toLocaleDateString("es-AR");
+};
+
+
 export default function Page() {
 const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [loadingCampaigns, setLoadingCampaigns] = useState(true);
@@ -421,27 +434,51 @@ const [isSaving, setIsSaving] = useState(false);
 }, []);
 
   const filteredCampaigns = useMemo(() => {
-    return campaigns.filter((c) => {
-      const textOk = [c.marca, c.campana, c.contenido]
-        .join(" ")
-        .toLowerCase()
-        .includes(search.toLowerCase());
+  return campaigns.filter((c) => {
+    const textOk = [c.marca, c.campana, c.contenido]
+      .join(" ")
+      .toLowerCase()
+      .includes(search.toLowerCase());
 
-      const monthOk =
-        monthFilter === "all" ? true : String(parseMonth(c.cobro)) === monthFilter;
+    const monthOk =
+      monthFilter === "all" ? true : String(parseMonth(c.cobro)) === monthFilter;
 
-      const statusOk =
-        statusFilter === "all"
-          ? true
-          : statusFilter === "cobrado"
-            ? c.cobrado
-            : statusFilter === "facturado"
-              ? c.facturaEnviada && !c.cobrado
-              : !c.facturaEnviada && !c.cobrado;
+    const statusOk =
+      statusFilter === "all"
+        ? true
+        : statusFilter === "cobrado"
+          ? c.cobrado
+          : statusFilter === "facturado"
+            ? c.facturaEnviada && !c.cobrado
+            : !c.facturaEnviada && !c.cobrado;
 
-      return textOk && monthOk && statusOk;
+    return textOk && monthOk && statusOk;
+  });
+}, [campaigns, search, monthFilter, statusFilter]);
+
+const upcomingCampaigns = useMemo(() => {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  return [...filteredCampaigns]
+    .filter((c) => !c.cobrado)
+    .sort((a, b) => {
+      const timeA = new Date(a.cobro).getTime();
+      const timeB = new Date(b.cobro).getTime();
+      const todayTime = today.getTime();
+
+      const diffA = Math.abs(timeA - todayTime);
+      const diffB = Math.abs(timeB - todayTime);
+
+      return diffA - diffB;
     });
-  }, [campaigns, search, monthFilter, statusFilter]);
+}, [filteredCampaigns]);
+
+const paidCampaigns = useMemo(() => {
+  return [...filteredCampaigns]
+    .filter((c) => c.cobrado)
+    .sort((a, b) => new Date(a.cobro).getTime() - new Date(b.cobro).getTime());
+}, [filteredCampaigns]);
 
   const monthlyData = useMemo(() => {
     return monthNames.map((month, index) => {
@@ -461,11 +498,18 @@ const [isSaving, setIsSaving] = useState(false);
     return { totalGeneral, totalYo, totalPendiente, facturas };
   }, [campaigns]);
 
-  const nextPending = useMemo(() => {
-    return [...campaigns]
-      .filter((c) => !c.cobrado)
-      .sort((a, b) => new Date(a.cobro).getTime() - new Date(b.cobro).getTime())[0];
-  }, [campaigns]);
+ const nextPending = useMemo(() => {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  return [...campaigns]
+    .filter((c) => !c.cobrado && !!c.cobro)
+    .filter((c) => {
+      const date = new Date(c.cobro);
+      return date.getTime() >= today.getTime();
+    })
+    .sort((a, b) => new Date(a.cobro).getTime() - new Date(b.cobro).getTime())[0];
+}, [campaigns]);
 
   const toggleFactura = (id: number) =>
     setCampaigns((prev) =>
@@ -485,22 +529,22 @@ const [isSaving, setIsSaving] = useState(false);
     setOpen(true);
   };
 
-  const openEditCampaign = (campaign: Campaign) => {
-    setEditingId(campaign.id);
-    setForm({
-      id: campaign.id,
-      marca: campaign.marca,
-      campana: campaign.campana === "-" ? "" : campaign.campana,
-      contenidoItems: campaign.contenidoItems || createContenidoState(),
-     publicacion: normalizeDateInput(campaign.publicacion),
-      pagoA: campaign.pagoA,
-      fee: String(campaign.fee),
-      tipoCobro: campaign.tipoCobro || "cash",
-      facturaEnviada: campaign.facturaEnviada,
-      cobrado: campaign.cobrado
-    });
-    setOpen(true);
-  };
+ const openEditCampaign = (campaign: Campaign) => {
+  setEditingId(campaign.id);
+  setForm({
+    id: campaign.id,
+    marca: campaign.marca,
+    campana: campaign.campana === "-" ? "" : campaign.campana,
+    contenidoItems: campaign.contenidoItems || createContenidoState(),
+    publicacion: normalizeDateInput(campaign.publicacion),
+    pagoA: campaign.pagoA,
+    fee: String(campaign.fee),
+    tipoCobro: campaign.tipoCobro || "cash",
+    facturaEnviada: campaign.facturaEnviada,
+    cobrado: campaign.cobrado
+  });
+  setOpen(true);
+};
 
   const deleteCampaign = async (campaignId: number) => {
   const confirmed =
@@ -971,7 +1015,7 @@ if (previewEsTransferencia) {
                         <p className="text-xl font-bold text-slate-900">{nextPending.marca}</p>
                         <p className="mt-3 text-sm text-slate-500">Fecha de cobro</p>
                         <p className="font-semibold text-slate-900">
-                          {new Date(nextPending.cobro).toLocaleDateString("es-AR")}
+                         {formatDateAR(nextPending.cobro)}
                         </p>
                         <p className="mt-3 text-sm text-slate-500">Monto</p>
                         <p className="font-semibold text-slate-900">
@@ -1031,104 +1075,154 @@ if (previewEsTransferencia) {
               </CardContent>
             </Card>
 
-            <div className="grid grid-cols-1 gap-4">
-              {filteredCampaigns.map((item) => (
-                <Card
-                  key={item.id}
-                  className="overflow-hidden rounded-[24px] border border-white/60 bg-white/90 shadow-[0_10px_40px_rgba(15,23,42,0.06)] backdrop-blur"
-                >
-                  <CardContent className="space-y-4 p-4">
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <p className="text-lg font-semibold text-slate-900">{item.marca}</p>
-                        <p className="text-sm text-slate-500">{item.campana}</p>
-                      </div>
-                      {statusBadge(item)}
-                    </div>
-
-                    <div className="grid grid-cols-1 gap-2 text-sm md:grid-cols-3">
-  <div className="font-bold text-slate-900">
-    <span className="font-bold text-slate-900">YO:</span> {currency(item.yoCash)}
-  </div>
-
-  <div className="font-bold text-slate-900">
-    <span className="font-bold text-slate-900">VP:</span> {currency(item.vpCash)}
-  </div>
-
-  <div>
-    <span className="text-slate-500">Fee:</span> {currency(item.fee)}
-  </div>
-
-  <div>
-    <span className="text-slate-500">Pago a:</span> {item.pagoA} días
-  </div>
-
-  <div>
-    <span className="text-slate-500">Cobro:</span> {new Date(item.cobro).toLocaleDateString("es-AR")}
-  </div>
-
-  <div>
-    <span className="text-slate-500">Publicación:</span> {new Date(item.publicacion).toLocaleDateString("es-AR")}
-  </div>
-
-  <div>
-    <span className="text-slate-500">Cobro por:</span>{" "}
-    <span
-      className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${
-        item.tipoCobro === "transferencia"
-          ? "bg-sky-100 text-sky-700"
-          : "bg-slate-100 text-slate-700"
-      }`}
-    >
-      {item.tipoCobro === "transferencia" ? "Transferencia" : "Cash"}
-    </span>
-  </div>
-
-  <div className="md:col-span-3">
-    <span className="text-slate-500">Contenido:</span> {item.contenido}
-  </div>
-</div>
-
-                 <div className="mt-3 space-y-2 rounded-2xl border border-slate-200 bg-slate-50 p-3">
-  <div className="flex items-center justify-between gap-3 rounded-xl bg-white px-3 py-3">
-    <span className="text-sm text-slate-700">Factura enviada</span>
-    <Switch
-      checked={item.facturaEnviada}
-      onCheckedChange={() => toggleFactura(item.id)}
-    />
-  </div>
-
-  <div className="flex items-center justify-between gap-3 rounded-xl bg-white px-3 py-3">
-    <span className="text-sm text-slate-700">Cobrado</span>
-    <Switch
-      checked={item.cobrado}
-      onCheckedChange={() => toggleCobrado(item.id)}
-    />
-  </div>
-</div>
-
-                    <div className="flex items-center gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="flex-1 rounded-xl border-slate-200 bg-white"
-                        onClick={() => openEditCampaign(item)}
-                      >
-                        <Pencil className="mr-2 h-4 w-4" /> Editar
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="rounded-xl border-slate-200 bg-white"
-                        onClick={() => deleteCampaign(item.id)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+           <div className="space-y-6">
+  <div className="grid grid-cols-1 gap-4">
+    {upcomingCampaigns.map((item) => (
+      <Card
+        key={item.id}
+        className="overflow-hidden rounded-[24px] border border-white/60 bg-white/90 shadow-[0_10px_40px_rgba(15,23,42,0.06)] backdrop-blur"
+      >
+        <CardContent className="space-y-4 p-4">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <p className="text-lg font-semibold text-slate-900">{item.marca}</p>
+              <p className="text-sm text-slate-500">{item.campana}</p>
             </div>
+            {statusBadge(item)}
+          </div>
+
+          <div className="grid grid-cols-1 gap-2 text-sm md:grid-cols-3">
+            <div className="font-bold text-slate-900">
+              <span className="font-bold text-slate-900">YO:</span> {currency(item.yoCash)}
+            </div>
+
+            <div className="font-bold text-slate-900">
+              <span className="font-bold text-slate-900">VP:</span> {currency(item.vpCash)}
+            </div>
+
+            <div>
+              <span className="text-slate-500">Fee:</span> {currency(item.fee)}
+            </div>
+
+            <div>
+              <span className="text-slate-500">Pago a:</span> {item.pagoA} días
+            </div>
+
+            <div>
+              <span className="text-slate-500">Cobro:</span> {formatDateAR(item.cobro)}
+            </div>
+
+            <div>
+              <span className="text-slate-500">Publicación:</span> {formatDateAR(item.publicacion)}
+            </div>
+
+            <div>
+              <span className="text-slate-500">Cobro por:</span>{" "}
+              <span
+                className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${
+                  item.tipoCobro === "transferencia"
+                    ? "bg-sky-100 text-sky-700"
+                    : "bg-slate-100 text-slate-700"
+                }`}
+              >
+                {item.tipoCobro === "transferencia" ? "Transferencia" : "Cash"}
+              </span>
+            </div>
+
+            <div className="md:col-span-3">
+              <span className="text-slate-500">Contenido:</span> {item.contenido}
+            </div>
+          </div>
+
+          <div className="mt-3 space-y-2 rounded-2xl border border-slate-200 bg-slate-50 p-3">
+            <div className="flex items-center justify-between gap-3 rounded-xl bg-white px-3 py-3">
+              <span className="text-sm text-slate-700">Factura enviada</span>
+              <Switch
+                checked={item.facturaEnviada}
+                onCheckedChange={() => toggleFactura(item.id)}
+              />
+            </div>
+
+            <div className="flex items-center justify-between gap-3 rounded-xl bg-white px-3 py-3">
+              <span className="text-sm text-slate-700">Cobrado</span>
+              <Switch
+                checked={item.cobrado}
+                onCheckedChange={() => toggleCobrado(item.id)}
+              />
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              className="flex-1 rounded-xl border-slate-200 bg-white"
+              onClick={() => openEditCampaign(item)}
+            >
+              <Pencil className="mr-2 h-4 w-4" /> Editar
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="rounded-xl border-slate-200 bg-white"
+              onClick={() => deleteCampaign(item.id)}
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    ))}
+  </div>
+
+  <div className="pt-2">
+    <div className="mb-3 flex items-center gap-3">
+      <div className="h-px flex-1 bg-slate-200" />
+      <p className="text-sm font-semibold uppercase tracking-wide text-slate-500">
+        Cobradas
+      </p>
+      <div className="h-px flex-1 bg-slate-200" />
+    </div>
+
+    <div className="space-y-3">
+      {paidCampaigns.length ? (
+        paidCampaigns.map((item) => (
+          <Card
+            key={item.id}
+            className="rounded-[20px] border border-slate-200 bg-slate-50/70 shadow-none"
+          >
+            <CardContent className="flex items-center justify-between gap-3 p-4">
+              <div className="min-w-0">
+                <p className="truncate text-sm font-semibold text-slate-900">
+                  {item.campana}
+                </p>
+                <p className="truncate text-xs text-slate-500">
+                  {item.marca} · {formatDateAR(item.cobro)}
+                </p>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <p className="text-sm font-bold text-slate-900">
+                  {currency(item.yoCash)}
+                </p>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="rounded-xl border-slate-200 bg-white"
+                  onClick={() => openEditCampaign(item)}
+                >
+                  <Pencil className="h-4 w-4" />
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        ))
+      ) : (
+        <p className="text-sm text-slate-500">Todavía no hay campañas cobradas.</p>
+      )}
+    </div>
+  </div>
+</div>
           </TabsContent>
 
           <TabsContent value="calendario" className="space-y-6">
@@ -1155,7 +1249,7 @@ if (previewEsTransferencia) {
                                 <div>
                                   <p className="font-semibold text-slate-900">{item.marca}</p>
                                   <p className="text-sm text-slate-500">
-                                    {new Date(item.cobro).toLocaleDateString("es-AR")}
+                                    {formatDateAR(item.cobro)}
                                   </p>
                                 </div>
                                 {statusBadge(item)}
