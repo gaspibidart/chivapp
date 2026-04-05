@@ -811,22 +811,36 @@ if (previewEsTransferencia) {
         </div>
       </div>
 
-     <div className="space-y-2">
+    <div className="space-y-2">
   <p className="text-sm font-medium text-slate-500">Tipo de cobro</p>
- 
-  <Select value={form.tipoCobro}
-    onValueChange={(tipoCobro) =>
-      setForm({ ...form, tipoCobro: tipoCobro as "cash" | "transferencia" })
-    }
-  >
-    <SelectTrigger className="rounded-2xl border-slate-200">
-      <SelectValue />
-    </SelectTrigger>
-    <SelectContent>
-      <SelectItem value="cash">Cash</SelectItem>
-      <SelectItem value="transferencia">Transferencia</SelectItem>
-    </SelectContent>
-  </Select>
+
+  <div className="grid grid-cols-2 gap-2">
+    <Button
+      type="button"
+      variant="outline"
+      onClick={() => setForm({ ...form, tipoCobro: "cash" })}
+      className={`rounded-2xl ${
+        form.tipoCobro === "cash"
+          ? "border-slate-900 bg-slate-900 text-white hover:bg-slate-800"
+          : "border-slate-200 bg-white text-slate-900 hover:bg-slate-50"
+      }`}
+    >
+      Cash
+    </Button>
+
+    <Button
+      type="button"
+      variant="outline"
+      onClick={() => setForm({ ...form, tipoCobro: "transferencia" })}
+      className={`rounded-2xl ${
+        form.tipoCobro === "transferencia"
+          ? "border-slate-900 bg-slate-900 text-white hover:bg-slate-800"
+          : "border-slate-200 bg-white text-slate-900 hover:bg-slate-50"
+      }`}
+    >
+      Transferencia
+    </Button>
+  </div>
 </div>
 
       <div className="flex items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4">
