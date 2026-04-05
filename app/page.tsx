@@ -808,19 +808,13 @@ if (previewEsTransferencia) {
             <span className="text-slate-500">VP:</span>{" "}
             <span className="font-bold text-slate-900">{currency(previewVp)}</span>
           </div>
-          <div>
-            <span className="text-slate-500">Cobro por:</span>{" "}
-            <span className="font-semibold text-slate-900">
-              {previewEsTransferencia ? "Transferencia" : "Cash"}
-            </span>
-          </div>
         </div>
       </div>
 
      <div className="space-y-2">
   <p className="text-sm font-medium text-slate-500">Tipo de cobro</p>
-  <Select
-    value={form.tipoCobro}
+ 
+  <Select value={form.tipoCobro}
     onValueChange={(tipoCobro) =>
       setForm({ ...form, tipoCobro: tipoCobro as "cash" | "transferencia" })
     }
