@@ -275,9 +275,9 @@ function ContentSelector({
           const current = value[option.key];
           return (
             <div
-              key={option.key}
-              className="flex items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
-            >
+  key={option.key}
+  className="flex min-w-0 items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
+>
               <div className="flex items-center gap-3">
                 <Checkbox
                   checked={current.checked}
@@ -285,22 +285,45 @@ function ContentSelector({
                     updateItem(option.key, { checked: Boolean(checked) })
                   }
                 />
-                <span className="text-sm font-medium text-slate-800">
-                  {option.label}
-                </span>
+                <span className="min-w-0 text-sm font-medium text-slate-800">
+  {option.label}
+</span>
               </div>
-              <Input
-                type="number"
-                min={1}
-                value={current.qty}
-                onChange={(e) =>
-                  updateItem(option.key, {
-                    qty: Math.max(1, Number(e.target.value || 1))
-                  })
-                }
-                className="w-20 rounded-xl border-slate-200"
-                disabled={!current.checked}
-              />
+              <div className="flex items-center gap-2">
+  <Button
+    type="button"
+    variant="outline"
+    size="sm"
+    className="h-9 w-9 rounded-xl border-slate-200 p-0"
+    disabled={!current.checked || current.qty <= 1}
+    onClick={() =>
+      updateItem(option.key, {
+        qty: Math.max(1, current.qty - 1)
+      })
+    }
+  >
+    -
+  </Button>
+
+  <div className="flex h-9 min-w-[44px] items-center justify-center rounded-xl border border-slate-200 bg-white px-3 text-sm font-medium text-slate-800">
+    {current.qty}
+  </div>
+
+  <Button
+    type="button"
+    variant="outline"
+    size="sm"
+    className="h-9 w-9 rounded-xl border-slate-200 p-0"
+    disabled={!current.checked}
+    onClick={() =>
+      updateItem(option.key, {
+        qty: current.qty + 1
+      })
+    }
+  >
+    +
+  </Button>
+</div>
             </div>
           );
         })}
@@ -647,13 +670,13 @@ const exportData = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top,#ecfeff_0%,#f8fafc_35%,#eef2ff_100%)] p-4 text-slate-900 md:p-6">
-      <div className="mx-auto max-w-7xl space-y-6">
+    <div className="min-h-screen overflow-x-hidden bg-[radial-gradient(circle_at_top,#ecfeff_0%,#f8fafc_35%,#eef2ff_100%)] p-4 text-slate-900 md:p-6">
+      <div className="mx-auto w-full max-w-7xl space-y-6 overflow-x-hidden">
         <motion.div
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.35 }}
-          className="flex flex-col gap-4 rounded-[32px] border border-white/60 bg-white/80 p-5 shadow-[0_20px_60px_rgba(15,23,42,0.08)] backdrop-blur-xl md:flex-row md:items-center md:justify-between md:p-7"
+          className="flex min-w-0 flex-col gap-4 rounded-[32px] border border-white/60 bg-white/80 p-5 shadow-[0_20px_60px_rgba(15,23,42,0.08)] backdrop-blur-xl md:flex-row md:items-center md:justify-between md:p-7"
         >
           <div>
             <p className="text-sm font-semibold tracking-wide text-emerald-600">
