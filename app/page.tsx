@@ -578,6 +578,7 @@ const yoMasIva = 0;
     facturaEnviada: form.facturaEnviada,
     cobrado: form.cobrado
   };
+  
 
   try {
     if (editingId) {
@@ -687,7 +688,19 @@ const exportData = () => {
       event.target.value = "";
     }
   };
+const previewFee = parseMoneyInput(form.fee || 0);
+const previewEsTransferencia = form.tipoCobro === "transferencia";
 
+let previewYo = 0;
+let previewVp = 0;
+
+if (previewEsTransferencia) {
+  previewVp = Math.round(previewFee * 0.2 * 1.21);
+  previewYo = previewFee - previewVp;
+} else {
+  previewYo = Math.round(previewFee * 0.8);
+  previewVp = previewFee - previewYo;
+}
   return (
     <div className="min-h-screen overflow-x-hidden bg-[radial-gradient(circle_at_top,#ecfeff_0%,#f8fafc_35%,#eef2ff_100%)] p-4 text-slate-900 md:p-6">
       <div className="mx-auto w-full max-w-7xl space-y-6 overflow-x-hidden">
@@ -776,22 +789,49 @@ const exportData = () => {
       <div className="space-y-2 md:col-span-2">
         <p className="text-sm font-medium text-slate-500">Fee</p>
         <Input
-          type="number"
-          placeholder="6000000"
+          type="text"
+          inputMode="numeric"
+          placeholder="5000000"
           value={form.fee}
-          onChange={(e) => setForm({ ...form, fee: e.target.value })}
+          onChange={(e) =>
+            setForm({
+              ...form,
+              fee: e.target.value.replace(/[^\d]/g, "")
+            })
+          }
           className="rounded-2xl border-slate-200"
+          autoComplete="off"
         />
+      </div>
+
+      <div className="rounded-2xl border border-emerald-100 bg-gradient-to-r from-emerald-50 to-cyan-50 p-4 text-sm md:col-span-2">
+        <p className="font-semibold text-slate-900">Vista previa</p>
+        <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-3">
+          <div>
+            <span className="text-slate-500">YO:</span>{" "}
+            <span className="font-bold text-slate-900">{currency(previewYo)}</span>
+          </div>
+          <div>
+            <span className="text-slate-500">VP:</span>{" "}
+            <span className="font-bold text-slate-900">{currency(previewVp)}</span>
+          </div>
+          <div>
+            <span className="text-slate-500">Cobro por:</span>{" "}
+            <span className="font-semibold text-slate-900">
+              {previewEsTransferencia ? "Transferencia" : "Cash"}
+            </span>
+          </div>
+        </div>
       </div>
 
       <div className="space-y-2">
         <p className="text-sm font-medium text-slate-500">Tipo de cobro</p>
         <Select
-  value={form.tipoCobro}
-  onValueChange={(tipoCobro) =>
-    setForm({ ...form, tipoCobro: tipoCobro as "cash" | "transferencia" })
-  }
->
+          value={form.tipoCobro}
+          onValueChange={(tipoCobro) =>
+            setForm({ ...form, tipoCobro: tipoCobro as "cash" | "transferencia" })
+          }
+        >
           <SelectTrigger className="rounded-2xl border-slate-200">
             <SelectValue />
           </SelectTrigger>
@@ -840,15 +880,15 @@ const exportData = () => {
       </Button>
 
       <Button
-  onClick={saveCampaign}
-  disabled={isSaving}
-  className="rounded-2xl bg-slate-900 px-6 text-white hover:bg-slate-800"
->
-  {isSaving ? "Guardando..." : editingId ? "Guardar cambios" : "Guardar campaña"}
-</Button>
+        onClick={saveCampaign}
+        disabled={isSaving}
+        className="rounded-2xl bg-slate-900 px-6 text-white hover:bg-slate-800"
+      >
+        {isSaving ? "Guardando..." : editingId ? "Guardar cambios" : "Guardar campaña"}
+      </Button>
     </div>
   </DialogContent>
-</Dialog>
+  </Dialog>
           </div>
         </motion.div>
 
