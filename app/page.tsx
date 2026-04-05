@@ -819,11 +819,11 @@ if (previewEsTransferencia) {
       type="button"
       variant="outline"
       onClick={() => setForm({ ...form, tipoCobro: "cash" })}
-      className={`rounded-2xl ${
-        form.tipoCobro === "cash"
-          ? "border-slate-900 bg-slate-900 text-white hover:bg-slate-800"
-          : "border-slate-200 bg-white text-slate-900 hover:bg-slate-50"
-      }`}
+      className={`rounded-2xl border transition ${
+  form.tipoCobro === "cash"
+    ? "border-slate-900 bg-slate-900 text-white"
+    : "border-slate-200 bg-white text-slate-900 hover:bg-slate-50"
+}`}
     >
       Cash
     </Button>
@@ -832,11 +832,11 @@ if (previewEsTransferencia) {
       type="button"
       variant="outline"
       onClick={() => setForm({ ...form, tipoCobro: "transferencia" })}
-      className={`rounded-2xl ${
-        form.tipoCobro === "transferencia"
-          ? "border-slate-900 bg-slate-900 text-white hover:bg-slate-800"
-          : "border-slate-200 bg-white text-slate-900 hover:bg-slate-50"
-      }`}
+      className={`rounded-2xl border transition ${
+  form.tipoCobro === "transferencia"
+    ? "border-slate-900 bg-slate-900 text-white"
+    : "border-slate-200 bg-white text-slate-900 hover:bg-slate-50"
+}`}
     >
       Transferencia
     </Button>
