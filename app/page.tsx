@@ -330,7 +330,7 @@ cobrado: false
 export default function Page() {
 const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [loadingCampaigns, setLoadingCampaigns] = useState(true);
-
+const [isSaving, setIsSaving] = useState(false);
   const [search, setSearch] = useState("");
   const [monthFilter, setMonthFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -472,17 +472,79 @@ const [campaigns, setCampaigns] = useState<Campaign[]>([]);
     setOpen(true);
   };
 
-  const deleteCampaign = (campaignId: number) => {
-    const confirmed =
-      typeof window === "undefined"
-        ? true
-        : window.confirm("¿Querés borrar esta campaña?");
-    if (!confirmed) return;
-    setCampaigns((prev) => prev.filter((item) => item.id !== campaignId));
-  };
+  const deleteCampaign = async (campaignId: number) => {
+  const confirmed =
+    typeof window === "undefined"
+      ? true
+      : window.confirm("¿Querés borrar esta campaña?");
+  if (!confirmed) return;
+
+  try {
+    const response = await fetch("/api/campaigns", {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ id: campaignId })
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      throw new Error(result?.error || "No se pudo borrar la campaña");
+    }
+
+    // refrescar desde Google Sheets para que no reaparezca
+    const refreshed = await fetch("/api/campaigns", {
+      cache: "no-store"
+    });
+
+    const refreshedData = await refreshed.json();
+
+    if (Array.isArray(refreshedData)) {
+      const normalized = refreshedData.map((item: any) => ({
+        id: Number(item.id),
+        marca: item.marca || "",
+        campana: item.campana || "-",
+        contenidoItems: createContenidoState(),
+        contenido: item.contenido || "-",
+        publicacion: item.publicacion || "",
+        pagoA: Number(item.pagoA || 0),
+        cobro: item.cobro || "",
+        fee: Number(item.fee || 0),
+        tipoCobro:
+          (item.tipoCobro === "transferencia" ? "transferencia" : "cash") as
+            | "cash"
+            | "transferencia",
+        yoCash: Number(item.yoCash || 0),
+        vpCash: Number(item.vpCash || 0),
+        ivaVane: Number(item.ivaVane || 0),
+        yoMasIva: Number(item.yoMasIva || 0),
+        facturaEnviada:
+          String(item.facturaEnviada).toLowerCase() === "true" ||
+          item.facturaEnviada === true,
+        cobrado:
+          String(item.cobrado).toLowerCase() === "true" ||
+          item.cobrado === true
+      }));
+
+      setCampaigns(normalized);
+    } else {
+      setCampaigns([]);
+    }
+  } catch (error) {
+    console.error(error);
+    if (typeof window !== "undefined") {
+      window.alert("No pude borrar la campaña en Google Sheets.");
+    }
+  }
+};
 
  const saveCampaign = async () => {
+  if (isSaving) return;
   if (!form.marca || !form.publicacion || !form.fee) return;
+
+  setIsSaving(true);
 
   const publicationDate = new Date(form.publicacion);
   const cobroDate = new Date(publicationDate);
@@ -520,68 +582,74 @@ const [campaigns, setCampaigns] = useState<Campaign[]>([]);
       setCampaigns((prev) =>
         prev.map((item) => (item.id === editingId ? payload : item))
       );
-    } else {
-      const response = await fetch("/api/campaigns", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify(payload)
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result?.error || "No se pudo guardar la campaña");
-      }
-
-      const refreshed = await fetch("/api/campaigns", {
-        cache: "no-store"
-      });
-
-      const refreshedData = await refreshed.json();
-
-      if (Array.isArray(refreshedData)) {
-        const normalized = refreshedData.map((item: any) => ({
-          id: Number(item.id),
-          marca: item.marca || "",
-          campana: item.campana || "-",
-          contenidoItems: createContenidoState(),
-          contenido: item.contenido || "-",
-          publicacion: item.publicacion || "",
-          pagoA: Number(item.pagoA || 0),
-          cobro: item.cobro || "",
-          fee: Number(item.fee || 0),
-          tipoCobro:
-  (item.tipoCobro === "transferencia" ? "transferencia" : "cash") as
-    | "cash"
-    | "transferencia",
-          yoCash: Number(item.yoCash || 0),
-          vpCash: Number(item.vpCash || 0),
-          ivaVane: Number(item.ivaVane || 0),
-          yoMasIva: Number(item.yoMasIva || 0),
-          facturaEnviada:
-            String(item.facturaEnviada).toLowerCase() === "true" ||
-            item.facturaEnviada === true,
-          cobrado:
-            String(item.cobrado).toLowerCase() === "true" ||
-            item.cobrado === true
-        }));
-
-        setCampaigns(normalized);
-      } else {
-        setCampaigns((prev) => [payload, ...prev]);
-      }
+      setForm(emptyForm);
+      setEditingId(null);
+      setOpen(false);
+      return;
     }
 
+    const response = await fetch("/api/campaigns", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(payload)
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      throw new Error(result?.error || "No se pudo guardar la campaña");
+    }
+
+    // cerrar el modal apenas guarda bien
     setForm(emptyForm);
     setEditingId(null);
     setOpen(false);
-   } catch (error) {
+
+    // después refrescar desde Google Sheets
+    const refreshed = await fetch("/api/campaigns", {
+      cache: "no-store"
+    });
+
+    const refreshedData = await refreshed.json();
+
+    if (Array.isArray(refreshedData)) {
+      const normalized = refreshedData.map((item: any) => ({
+        id: Number(item.id),
+        marca: item.marca || "",
+        campana: item.campana || "-",
+        contenidoItems: createContenidoState(),
+        contenido: item.contenido || "-",
+        publicacion: item.publicacion || "",
+        pagoA: Number(item.pagoA || 0),
+        cobro: item.cobro || "",
+        fee: Number(item.fee || 0),
+        tipoCobro:
+          (item.tipoCobro === "transferencia" ? "transferencia" : "cash") as
+            | "cash"
+            | "transferencia",
+        yoCash: Number(item.yoCash || 0),
+        vpCash: Number(item.vpCash || 0),
+        ivaVane: Number(item.ivaVane || 0),
+        yoMasIva: Number(item.yoMasIva || 0),
+        facturaEnviada:
+          String(item.facturaEnviada).toLowerCase() === "true" ||
+          item.facturaEnviada === true,
+        cobrado:
+          String(item.cobrado).toLowerCase() === "true" ||
+          item.cobrado === true
+      }));
+
+      setCampaigns(normalized);
+    }
+  } catch (error) {
     console.error(error);
     if (typeof window !== "undefined") {
       window.alert("No pude guardar la campaña en Google Sheets.");
     }
+  } finally {
+    setIsSaving(false);
   }
 };
 
@@ -763,11 +831,12 @@ const exportData = () => {
       </Button>
 
       <Button
-        onClick={saveCampaign}
-        className="rounded-2xl bg-slate-900 px-6 text-white hover:bg-slate-800"
-      >
-        {editingId ? "Guardar cambios" : "Guardar campaña"}
-      </Button>
+  onClick={saveCampaign}
+  disabled={isSaving}
+  className="rounded-2xl bg-slate-900 px-6 text-white hover:bg-slate-800"
+>
+  {isSaving ? "Guardando..." : editingId ? "Guardar cambios" : "Guardar campaña"}
+</Button>
     </div>
   </DialogContent>
 </Dialog>
