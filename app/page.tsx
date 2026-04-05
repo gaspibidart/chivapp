@@ -816,30 +816,28 @@ if (previewEsTransferencia) {
 
   <div className="grid grid-cols-2 gap-2">
     <Button
-      type="button"
-      variant="outline"
-      onClick={() => setForm({ ...form, tipoCobro: "cash" })}
-      className={`rounded-2xl border transition ${
-  form.tipoCobro === "cash"
-    ? "border-slate-900 bg-slate-900 text-white"
-    : "border-slate-200 bg-white text-slate-900 hover:bg-slate-50"
-}`}
-    >
-      Cash
-    </Button>
+  type="button"
+  onClick={() => setForm({ ...form, tipoCobro: "cash" })}
+  className={`rounded-2xl border px-4 py-2 transition ${
+    form.tipoCobro === "cash"
+      ? "!border-slate-900 !bg-slate-900 !text-white hover:!bg-slate-900"
+      : "!border-slate-200 !bg-white !text-slate-900 hover:!bg-slate-50"
+  }`}
+>
+  Cash
+</Button>
 
-    <Button
-      type="button"
-      variant="outline"
-      onClick={() => setForm({ ...form, tipoCobro: "transferencia" })}
-      className={`rounded-2xl border transition ${
-  form.tipoCobro === "transferencia"
-    ? "border-slate-900 bg-slate-900 text-white"
-    : "border-slate-200 bg-white text-slate-900 hover:bg-slate-50"
-}`}
-    >
-      Transferencia
-    </Button>
+   <Button
+  type="button"
+  onClick={() => setForm({ ...form, tipoCobro: "transferencia" })}
+  className={`rounded-2xl border px-4 py-2 transition ${
+    form.tipoCobro === "transferencia"
+      ? "!border-slate-900 !bg-slate-900 !text-white hover:!bg-slate-900"
+      : "!border-slate-200 !bg-white !text-slate-900 hover:!bg-slate-50"
+  }`}
+>
+  Transferencia
+</Button>
   </div>
 </div>
 
