@@ -574,6 +574,46 @@ const paidCampaigns = useMemo(() => {
   }
 };
 
+const refreshCampaigns = async () => {
+  const refreshed = await fetch("/api/campaigns", {
+    cache: "no-store"
+  });
+
+  const refreshedData = await refreshed.json();
+
+  if (Array.isArray(refreshedData)) {
+    const normalized = refreshedData.map((item: any) => ({
+      id: Number(item.id),
+      marca: item.marca || "",
+      campana: item.campana || "-",
+      contenidoItems: createContenidoState(),
+      contenido: item.contenido || "-",
+      publicacion: normalizeDateInput(item.publicacion || ""),
+      pagoA: Number(item.pagoA || 0),
+      cobro: normalizeDateInput(item.cobro || ""),
+      fee: Number(item.fee || 0),
+      tipoCobro:
+        (item.tipoCobro === "transferencia" ? "transferencia" : "cash") as
+          | "cash"
+          | "transferencia",
+      yoCash: Number(item.yoCash || 0),
+      vpCash: Number(item.vpCash || 0),
+      ivaVane: Number(item.ivaVane || 0),
+      yoMasIva: Number(item.yoMasIva || 0),
+      facturaEnviada:
+        String(item.facturaEnviada).toLowerCase() === "true" ||
+        item.facturaEnviada === true,
+      cobrado:
+        String(item.cobrado).toLowerCase() === "true" ||
+        item.cobrado === true
+    }));
+
+    setCampaigns(normalized);
+  } else {
+    setCampaigns([]);
+  }
+};
+
  const saveCampaign = async () => {
   if (isSaving) return;
   if (!form.marca || !form.publicacion || !form.fee) return;
@@ -626,70 +666,40 @@ const yoMasIva = 0;
 
   try {
     if (editingId) {
-      setCampaigns((prev) =>
-        prev.map((item) => (item.id === editingId ? payload : item))
-      );
-      setForm(emptyForm);
-      setEditingId(null);
-      setOpen(false);
-      return;
-    }
+  const deleteResponse = await fetch(`/api/campaigns?action=delete&id=${editingId}`, {
+    method: "GET",
+    cache: "no-store"
+  });
 
-    const response = await fetch("/api/campaigns", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify(payload)
-    });
+  const deleteResult = await deleteResponse.json();
 
-    const result = await response.json();
+  if (!deleteResponse.ok || !deleteResult?.success) {
+    throw new Error(deleteResult?.error || "No se pudo actualizar la campaña");
+  }
 
-    if (!response.ok) {
-      throw new Error(result?.error || "No se pudo guardar la campaña");
-    }
+  const updateResponse = await fetch("/api/campaigns", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(payload)
+  });
 
-    // cerrar el modal apenas guarda bien
-    setForm(emptyForm);
-    setEditingId(null);
-    setOpen(false);
+  const updateResult = await updateResponse.json();
 
-    // después refrescar desde Google Sheets
-    const refreshed = await fetch("/api/campaigns", {
-      cache: "no-store"
-    });
+  if (!updateResponse.ok || !updateResult?.success) {
+    throw new Error(updateResult?.error || "No se pudo actualizar la campaña");
+  }
 
-    const refreshedData = await refreshed.json();
+  setForm(emptyForm);
+  setEditingId(null);
+  setOpen(false);
 
-    if (Array.isArray(refreshedData)) {
-      const normalized = refreshedData.map((item: any) => ({
-        id: Number(item.id),
-        marca: item.marca || "",
-        campana: item.campana || "-",
-        contenidoItems: createContenidoState(),
-        contenido: item.contenido || "-",
-        publicacion: normalizeDateInput(item.publicacion || ""),
-        pagoA: Number(item.pagoA || 0),
-        cobro: normalizeDateInput(item.cobro || ""),
-        fee: Number(item.fee || 0),
-        tipoCobro:
-          (item.tipoCobro === "transferencia" ? "transferencia" : "cash") as
-            | "cash"
-            | "transferencia",
-        yoCash: Number(item.yoCash || 0),
-        vpCash: Number(item.vpCash || 0),
-        ivaVane: Number(item.ivaVane || 0),
-        yoMasIva: Number(item.yoMasIva || 0),
-        facturaEnviada:
-          String(item.facturaEnviada).toLowerCase() === "true" ||
-          item.facturaEnviada === true,
-        cobrado:
-          String(item.cobrado).toLowerCase() === "true" ||
-          item.cobrado === true
-      }));
+  await refreshCampaigns();
+  return;
+}
 
-      setCampaigns(normalized);
-    }
+   
   } catch (error) {
     console.error(error);
     if (typeof window !== "undefined") {
@@ -1187,35 +1197,39 @@ if (previewEsTransferencia) {
     <div className="space-y-3">
       {paidCampaigns.length ? (
         paidCampaigns.map((item) => (
-          <Card
-            key={item.id}
-            className="rounded-[20px] border border-slate-200 bg-slate-50/70 shadow-none"
-          >
-            <CardContent className="flex items-center justify-between gap-3 p-4">
-              <div className="min-w-0">
-                <p className="truncate text-sm font-semibold text-slate-900">
-                  {item.campana}
-                </p>
-                <p className="truncate text-xs text-slate-500">
-                  {item.marca} · {formatDateAR(item.cobro)}
-                </p>
-              </div>
+<Card
+  key={item.id}
+  className="rounded-[20px] border border-slate-200 bg-slate-50/70 shadow-none"
+>
+  <CardContent className="flex items-center justify-between gap-3 p-4">
+    <div className="min-w-0">
+      <p className="truncate text-sm font-semibold text-slate-900">
+        {item.marca}
+      </p>
+      <p className="truncate text-xs text-slate-500">
+        {item.contenido}
+      </p>
+    </div>
 
-              <div className="flex items-center gap-3">
-                <p className="text-sm font-bold text-slate-900">
-                  {currency(item.yoCash)}
-                </p>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="rounded-xl border-slate-200 bg-white"
-                  onClick={() => openEditCampaign(item)}
-                >
-                  <Pencil className="h-4 w-4" />
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+    <div className="flex items-center gap-3">
+      <div className="text-right">
+        <p className="text-[11px] uppercase tracking-wide text-slate-500">YO</p>
+        <p className="text-sm font-bold text-slate-900">
+          {currency(item.yoCash)}
+        </p>
+      </div>
+
+      <Button
+        variant="outline"
+        size="sm"
+        className="rounded-xl border-slate-200 bg-white"
+        onClick={() => openEditCampaign(item)}
+      >
+        <Pencil className="h-4 w-4" />
+      </Button>
+    </div>
+  </CardContent>
+</Card>
         ))
       ) : (
         <p className="text-sm text-slate-500">Todavía no hay campañas cobradas.</p>
