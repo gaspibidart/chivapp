@@ -817,7 +817,23 @@ if (previewEsTransferencia) {
         </div>
       </div>
 
-     
+     <div className="space-y-2">
+  <p className="text-sm font-medium text-slate-500">Tipo de cobro</p>
+  <Select
+    value={form.tipoCobro}
+    onValueChange={(tipoCobro) =>
+      setForm({ ...form, tipoCobro: tipoCobro as "cash" | "transferencia" })
+    }
+  >
+    <SelectTrigger className="rounded-2xl border-slate-200">
+      <SelectValue />
+    </SelectTrigger>
+    <SelectContent>
+      <SelectItem value="cash">Cash</SelectItem>
+      <SelectItem value="transferencia">Transferencia</SelectItem>
+    </SelectContent>
+  </Select>
+</div>
 
       <div className="flex items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4">
         <span className="text-sm text-slate-700">Factura enviada</span>
