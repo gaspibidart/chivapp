@@ -534,11 +534,21 @@ const [isSaving, setIsSaving] = useState(false);
   cobroDate.setDate(cobroDate.getDate() + Number(form.pagoA || 0));
 
   const fee = Number(form.fee);
-  const yoCash = Math.round(fee * 0.758);
-  const vpCash = fee - yoCash;
-  const esTransferencia = form.tipoCobro === "transferencia";
-  const ivaVane = esTransferencia ? Math.round(vpCash * 1.21) : 0;
-  const yoMasIva = esTransferencia ? Math.round(yoCash * 0.9475) : 0;
+const esTransferencia = form.tipoCobro === "transferencia";
+
+let yoCash = 0;
+let vpCash = 0;
+
+if (esTransferencia) {
+  vpCash = Math.round(fee * 0.2 * 1.21);
+  yoCash = fee - vpCash;
+} else {
+  yoCash = Math.round(fee * 0.8);
+  vpCash = fee - yoCash;
+}
+
+const ivaVane = 0;
+const yoMasIva = 0;
   const contenido = buildContenido(form.contenidoItems);
 
   const payload = {
@@ -983,29 +993,42 @@ const exportData = () => {
 
                     <div className="grid grid-cols-1 gap-2 text-sm md:grid-cols-3">
   <div className="font-bold text-slate-900">
-    <span className="font-bold text-slate-900">YO:</span> {currency(amountValue(item))}
+    <span className="font-bold text-slate-900">YO:</span> {currency(item.yoCash)}
   </div>
-  <div>
-    <span className="text-slate-500">
-      {item.tipoCobro === "transferencia" ? "VP + IVA:" : "VP Cash:"}
-    </span>{" "}
-    {currency(item.tipoCobro === "transferencia" ? item.ivaVane : item.vpCash)}
+
+  <div className="font-bold text-slate-900">
+    <span className="font-bold text-slate-900">VP:</span> {currency(item.vpCash)}
   </div>
+
   <div>
     <span className="text-slate-500">Fee:</span> {currency(item.fee)}
   </div>
+
   <div>
     <span className="text-slate-500">Pago a:</span> {item.pagoA} días
   </div>
+
   <div>
     <span className="text-slate-500">Cobro:</span> {new Date(item.cobro).toLocaleDateString("es-AR")}
   </div>
+
   <div>
     <span className="text-slate-500">Publicación:</span> {new Date(item.publicacion).toLocaleDateString("es-AR")}
   </div>
+
   <div>
-    <span className="text-slate-500">Cobro por:</span> {item.tipoCobro === "transferencia" ? "Transferencia" : "Cash"}
+    <span className="text-slate-500">Cobro por:</span>{" "}
+    <span
+      className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${
+        item.tipoCobro === "transferencia"
+          ? "bg-sky-100 text-sky-700"
+          : "bg-slate-100 text-slate-700"
+      }`}
+    >
+      {item.tipoCobro === "transferencia" ? "Transferencia" : "Cash"}
+    </span>
   </div>
+
   <div className="md:col-span-3">
     <span className="text-slate-500">Contenido:</span> {item.contenido}
   </div>
