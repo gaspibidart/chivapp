@@ -36,8 +36,31 @@ async function postToAppsScript(body: unknown) {
   }
 }
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
+    const { searchParams } = new URL(req.url);
+    const action = searchParams.get("action");
+    const id = searchParams.get("id");
+
+    if (action === "delete" && id) {
+      const deleteUrl = `${APPS_SCRIPT_URL}?action=delete&id=${id}`;
+
+      const response = await fetch(deleteUrl, {
+        method: "GET",
+        cache: "no-store",
+      });
+
+      const text = await response.text();
+
+      try {
+        return NextResponse.json(JSON.parse(text));
+      } catch {
+        return NextResponse.json({
+          success: text === "true" || text === "ok" || !!text,
+        });
+      }
+    }
+
     const response = await fetch(APPS_SCRIPT_URL, {
       method: "GET",
       cache: "no-store",
@@ -72,11 +95,14 @@ export async function DELETE(req: NextRequest) {
   try {
     const body = await req.json();
 
-    const data = await postToAppsScript({
-      action: "delete",
-      id: body.id,
+    const deleteUrl = `${APPS_SCRIPT_URL}?action=delete&id=${body.id}`;
+
+    const response = await fetch(deleteUrl, {
+      method: "GET",
+      cache: "no-store",
     });
 
+    const data = await response.json();
     return NextResponse.json(data);
   } catch (error) {
     console.error("DELETE campaigns error:", error);

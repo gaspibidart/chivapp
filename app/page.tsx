@@ -480,58 +480,18 @@ const [isSaving, setIsSaving] = useState(false);
   if (!confirmed) return;
 
   try {
-    const response = await fetch("/api/campaigns", {
-      method: "DELETE",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({ id: campaignId })
+    const response = await fetch(`/api/campaigns?action=delete&id=${campaignId}`, {
+      method: "GET",
+      cache: "no-store"
     });
 
     const result = await response.json();
 
-    if (!response.ok) {
+    if (!response.ok || !result?.success) {
       throw new Error(result?.error || "No se pudo borrar la campaña");
     }
 
-    // refrescar desde Google Sheets para que no reaparezca
-    const refreshed = await fetch("/api/campaigns", {
-      cache: "no-store"
-    });
-
-    const refreshedData = await refreshed.json();
-
-    if (Array.isArray(refreshedData)) {
-      const normalized = refreshedData.map((item: any) => ({
-        id: Number(item.id),
-        marca: item.marca || "",
-        campana: item.campana || "-",
-        contenidoItems: createContenidoState(),
-        contenido: item.contenido || "-",
-        publicacion: item.publicacion || "",
-        pagoA: Number(item.pagoA || 0),
-        cobro: item.cobro || "",
-        fee: Number(item.fee || 0),
-        tipoCobro:
-          (item.tipoCobro === "transferencia" ? "transferencia" : "cash") as
-            | "cash"
-            | "transferencia",
-        yoCash: Number(item.yoCash || 0),
-        vpCash: Number(item.vpCash || 0),
-        ivaVane: Number(item.ivaVane || 0),
-        yoMasIva: Number(item.yoMasIva || 0),
-        facturaEnviada:
-          String(item.facturaEnviada).toLowerCase() === "true" ||
-          item.facturaEnviada === true,
-        cobrado:
-          String(item.cobrado).toLowerCase() === "true" ||
-          item.cobrado === true
-      }));
-
-      setCampaigns(normalized);
-    } else {
-      setCampaigns([]);
-    }
+    setCampaigns((prev) => prev.filter((item) => item.id !== campaignId));
   } catch (error) {
     console.error(error);
     if (typeof window !== "undefined") {
