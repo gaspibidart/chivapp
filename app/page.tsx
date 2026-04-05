@@ -268,15 +268,15 @@ function ContentSelector({
   };
 
   return (
-    <div className="space-y-3 md:col-span-2">
+    <div className="min-w-0 space-y-3 md:col-span-2">
       <p className="text-sm font-medium text-slate-500">Contenido</p>
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+      <div className="grid w-full min-w-0 grid-cols-1 gap-3 md:grid-cols-2">
         {CONTENT_OPTIONS.map((option) => {
           const current = value[option.key];
           return (
-            <div
+           <div
   key={option.key}
-  className="flex min-w-0 items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
+  className="flex w-full min-w-0 items-center justify-between gap-3 overflow-hidden rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
 >
               <div className="flex items-center gap-3">
                 <Checkbox
@@ -707,7 +707,7 @@ const exportData = () => {
       </DialogTitle>
     </DialogHeader>
 
-    <div className="grid grid-cols-1 gap-4 py-2 md:grid-cols-2">
+    <div className="grid w-full min-w-0 grid-cols-1 gap-4 overflow-x-hidden py-2 md:grid-cols-2">
       <Input
         placeholder="Marca"
         value={form.marca}
