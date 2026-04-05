@@ -625,32 +625,33 @@ const refreshCampaigns = async () => {
   cobroDate.setDate(cobroDate.getDate() + Number(form.pagoA || 0));
 
   const fee = parseMoneyInput(form.fee);
-  console.log("FEE INGRESADO EN FORM:", form.fee);
-console.log("FEE LIMPIO A GUARDAR:", fee);
-const esTransferencia = form.tipoCobro === "transferencia";
+  const esTransferencia = form.tipoCobro === "transferencia";
 
-let yoCash = 0;
-let vpCash = 0;
+  let yoCash = 0;
+  let vpCash = 0;
 
-if (esTransferencia) {
-  vpCash = Math.round(fee * 0.2 * 1.21);
-  yoCash = fee - vpCash;
-} else {
-  yoCash = Math.round(fee * 0.8);
-  vpCash = fee - yoCash;
-}
+  if (esTransferencia) {
+    vpCash = Math.round(fee * 0.2 * 1.21);
+    yoCash = fee - vpCash;
+  } else {
+    yoCash = Math.round(fee * 0.8);
+    vpCash = fee - yoCash;
+  }
 
-const ivaVane = 0;
-const yoMasIva = 0;
-  const contenido = buildContenido(form.contenidoItems);
+  const ivaVane = 0;
+  const yoMasIva = 0;
+
+  const currentCampaign = campaigns.find((c) => c.id === editingId);
+  const contenidoCalculado = buildContenido(form.contenidoItems);
+  const contenidoFinal = contenidoCalculado || currentCampaign?.contenido || "";
 
   const payload = {
     id: editingId || Date.now(),
     marca: form.marca,
     campana: form.campana || "-",
     contenidoItems: form.contenidoItems,
-    contenido,
-    publicacion: form.publicacion,
+    contenido: contenidoFinal,
+    publicacion: normalizeDateInput(form.publicacion),
     pagoA: Number(form.pagoA || 0),
     cobro: cobroDate.toISOString().slice(0, 10),
     fee,
@@ -662,48 +663,44 @@ const yoMasIva = 0;
     facturaEnviada: form.facturaEnviada,
     cobrado: form.cobrado
   };
-  
 
   try {
     if (editingId) {
-  const deleteResponse = await fetch(`/api/campaigns?action=delete&id=${editingId}`, {
-    method: "GET",
-    cache: "no-store"
-  });
+      const deleteResponse = await fetch(`/api/campaigns?action=delete&id=${editingId}`, {
+        method: "GET",
+        cache: "no-store"
+      });
 
-  const deleteResult = await deleteResponse.json();
+      const deleteResult = await deleteResponse.json();
 
-  if (!deleteResponse.ok || !deleteResult?.success) {
-    throw new Error(deleteResult?.error || "No se pudo actualizar la campaña");
-  }
+      if (!deleteResponse.ok || !deleteResult?.success) {
+        throw new Error(deleteResult?.error || "No se pudo borrar la campaña original");
+      }
+    }
 
-  const updateResponse = await fetch("/api/campaigns", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify(payload)
-  });
+    const saveResponse = await fetch("/api/campaigns", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(payload)
+    });
 
-  const updateResult = await updateResponse.json();
+    const saveResult = await saveResponse.json();
 
-  if (!updateResponse.ok || !updateResult?.success) {
-    throw new Error(updateResult?.error || "No se pudo actualizar la campaña");
-  }
+    if (!saveResponse.ok || !saveResult?.success) {
+      throw new Error(saveResult?.error || "No se pudo guardar la campaña");
+    }
 
-  setForm(emptyForm);
-  setEditingId(null);
-  setOpen(false);
+    await refreshCampaigns();
 
-  await refreshCampaigns();
-  return;
-}
-
-   
+    setForm(emptyForm);
+    setEditingId(null);
+    setOpen(false);
   } catch (error) {
     console.error(error);
     if (typeof window !== "undefined") {
-      window.alert("No pude guardar la campaña en Google Sheets.");
+      window.alert("No pude guardar los cambios en Google Sheets.");
     }
   } finally {
     setIsSaving(false);
