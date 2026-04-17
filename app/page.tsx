@@ -813,7 +813,7 @@ export default function Page() {
           <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:justify-end">
             {/* FIX: DialogTrigger con asChild evita button dentro de button */}
             <Dialog open={open} onOpenChange={setOpen}>
-              <DialogTrigger asChild>
+              <DialogTrigger>
                 <Button
                   onClick={openNewCampaign}
                   className="rounded-2xl bg-slate-900 px-5 py-6 text-sm font-medium text-white shadow-lg hover:bg-slate-800"
