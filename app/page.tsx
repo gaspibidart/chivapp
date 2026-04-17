@@ -792,7 +792,7 @@ export default function Page() {
   }
 
   return (
-    <div className="min-h-screen overflow-x-hidden bg-[radial-gradient(circle_at_top,#ecfeff_0%,#f8fafc_35%,#eef2ff_100%)] p-4 text-slate-900 md:p-6">
+    <div className="min-h-screen overflow-x-hidden bg-[radial-gradient(circle_at_top,#ecfeff_0%,#f8fafc_35%,#eef2ff_100%)] p-2 text-slate-900 md:p-6">
       <div className="mx-auto w-full max-w-7xl space-y-6 overflow-x-hidden">
 
         {/* Header */}
@@ -833,13 +833,13 @@ export default function Page() {
                   <Input
                     placeholder="Marca"
                     value={form.marca}
-                    onChange={(e) => setForm({ ...form, marca: e.target.value })}
+                    onChange={(e) => setForm({ ...form, marca: e.target.value.toUpperCase() })}
                     className="rounded-2xl border-slate-200"
                   />
                   <Input
                     placeholder="Campaña"
                     value={form.campana}
-                    onChange={(e) => setForm({ ...form, campana: e.target.value })}
+                    onChange={(e) => setForm({ ...form, campana: e.target.value.toUpperCase() })}
                     className="rounded-2xl border-slate-200"
                   />
 
@@ -861,11 +861,14 @@ export default function Page() {
                   <div className="space-y-2">
                     <p className="text-sm font-medium text-slate-500">Pago a (días)</p>
                     <Input
-                      type="number"
-                      value={form.pagoA}
-                      onChange={(e) =>
-                        setForm({ ...form, pagoA: Number(e.target.value || 0) })
-                      }
+                      type="text"
+                      inputMode="numeric"
+                      placeholder="30"
+                      value={form.pagoA === 0 ? "" : String(form.pagoA)}
+                      onChange={(e) => {
+                        const val = e.target.value.replace(/[^\d]/g, "");
+                        setForm({ ...form, pagoA: val === "" ? 0 : Number(val) });
+                      }}
                       className="rounded-2xl border-slate-200"
                     />
                   </div>
