@@ -194,8 +194,7 @@ const currency = (value: number): string =>
     maximumFractionDigits: 0,
   }).format(value || 0);
 
-const amountValue = (item: Campaign): number =>
-  item.tipoCobro === "transferencia" ? item.yoMasIva : item.yoCash;
+const amountValue = (item: Campaign): number => item.yoCash;
 
 // FIX: normalización extraída a función reutilizable para evitar duplicación
 // entre loadCampaigns y refreshCampaigns.
