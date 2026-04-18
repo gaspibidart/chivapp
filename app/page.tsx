@@ -102,12 +102,14 @@ type FormState = {
 // ─── Constantes ───────────────────────────────────────────────────────────────
 
 const CONTENT_OPTIONS = [
-  { key: "reel", label: "Reel", plural: "Reels" },
-  { key: "story", label: "Story", plural: "Stories" },
-  { key: "collab", label: "Collab", plural: "Collabs" },
-  { key: "presencia", label: "Presencia", plural: "Presencias" },
-  { key: "carrousel", label: "Carrousel", plural: "Carrousels" },
-  { key: "tiktok", label: "TikTok", plural: "TikToks" },
+  { key: "reel", label: "Reel", plural: "Reels", type: "qty" },
+  { key: "story", label: "Story", plural: "Stories", type: "qty" },
+  { key: "collab", label: "Collab", plural: "Collabs", type: "qty" },
+  { key: "presencia", label: "Presencia", plural: "Presencias", type: "qty" },
+  { key: "carrousel", label: "Carrousel", plural: "Carrousels", type: "qty" },
+  { key: "tiktok", label: "TikTok", plural: "TikToks", type: "qty" },
+  { key: "exclusividad", label: "Exclusividad", plural: "Exclusividad", type: "days" },
+  { key: "pauta", label: "Pauta", plural: "Pauta", type: "check" },
 ] as const;
 
 const monthNames = [
@@ -134,6 +136,11 @@ function buildContenido(seleccion: ContenidoState): string {
   const parts = CONTENT_OPTIONS.filter(
     (option) => seleccion?.[option.key]?.checked
   ).map((option) => {
+    if (option.type === "check") return option.label;
+    if (option.type === "days") {
+      const qty = Number(seleccion?.[option.key]?.qty || 1);
+      return `${option.label} ${qty} día${qty === 1 ? "" : "s"}`;
+    }
     const qty = Math.max(1, Number(seleccion?.[option.key]?.qty || 1));
     return `${qty} ${qty === 1 ? option.label : option.plural}`;
   });
@@ -506,35 +513,53 @@ function ContentSelector({
                   {option.label}
                 </span>
               </div>
-              <div className="flex items-center gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="h-9 w-9 rounded-xl border-slate-200 p-0"
-                  disabled={!current.checked || current.qty <= 1}
-                  onClick={() =>
-                    updateItem(option.key, { qty: Math.max(1, current.qty - 1) })
-                  }
-                >
-                  -
-                </Button>
-                <div className="flex h-9 min-w-[44px] items-center justify-center rounded-xl border border-slate-200 bg-white px-3 text-sm font-medium text-slate-800">
-                  {current.qty}
+              {option.type === "qty" && (
+                <div className="flex items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-9 w-9 rounded-xl border-slate-200 p-0"
+                    disabled={!current.checked || current.qty <= 1}
+                    onClick={() =>
+                      updateItem(option.key, { qty: Math.max(1, current.qty - 1) })
+                    }
+                  >
+                    -
+                  </Button>
+                  <div className="flex h-9 min-w-[44px] items-center justify-center rounded-xl border border-slate-200 bg-white px-3 text-sm font-medium text-slate-800">
+                    {current.qty}
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-9 w-9 rounded-xl border-slate-200 p-0"
+                    disabled={!current.checked}
+                    onClick={() =>
+                      updateItem(option.key, { qty: current.qty + 1 })
+                    }
+                  >
+                    +
+                  </Button>
                 </div>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="h-9 w-9 rounded-xl border-slate-200 p-0"
-                  disabled={!current.checked}
-                  onClick={() =>
-                    updateItem(option.key, { qty: current.qty + 1 })
-                  }
-                >
-                  +
-                </Button>
-              </div>
+              )}
+              {option.type === "days" && (
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    disabled={!current.checked}
+                    value={current.checked ? (current.qty === 1 ? "" : String(current.qty)) : ""}
+                    placeholder="días"
+                    onChange={(e) => {
+                      const val = e.target.value.replace(/[^0-9]/g, "");
+                      updateItem(option.key, { qty: val === "" ? 1 : Number(val) });
+                    }}
+                    className="h-9 w-20 rounded-xl border border-slate-200 bg-white px-3 text-[16px] text-slate-800 disabled:opacity-40"
+                  />
+                </div>
+              )}
             </div>
           );
         })}
@@ -822,7 +847,7 @@ export default function Page() {
                 </Button>
               </DialogTrigger>
 
-              <DialogContent className="max-h-[90vh] max-w-3xl overflow-y-auto rounded-3xl border border-white/60 bg-white/95 backdrop-blur-xl">
+              <DialogContent className="max-h-[90vh] max-w-3xl overflow-y-auto rounded-3xl border border-white/60 bg-white/95 backdrop-blur-xl [&_input]:text-[16px] [&_select]:text-[16px]">
                 <DialogHeader>
                   <DialogTitle className="text-xl text-slate-900">
                     {editingId ? "Editar campaña" : "Agregar campaña"}
