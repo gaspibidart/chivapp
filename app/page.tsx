@@ -1103,7 +1103,13 @@ export default function Page() {
           <div style={{borderRadius:20, border:"1px solid rgba(249,115,22,0.25)", background:"rgba(249,115,22,0.1)", padding:16}}>
             <p style={{fontSize:12, fontWeight:500, color:"rgba(253,186,116,0.7)"}}>Pendiente de cobro</p>
             <p style={{marginTop:4, fontSize:24, fontWeight:700, color:"#fb923c"}}>{currency(totals.totalPendiente)}</p>
-            <p style={{marginTop:2, fontSize:11, color:"rgba(253,186,116,0.5)"}}>Por cobrar</p>
+            <div style={{marginTop:8, display:"flex", flexWrap:"wrap", gap:6}}>
+              {campaigns.filter((c) => !c.cobrado).map((c) => (
+                <span key={c.id} style={{fontSize:11, fontWeight:600, color:"rgba(253,186,116,0.8)", background:"rgba(249,115,22,0.15)", borderRadius:999, padding:"2px 10px"}}>
+                  {c.marca}
+                </span>
+              ))}
+            </div>
           </div>
         </div>
 
