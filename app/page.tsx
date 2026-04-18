@@ -1033,22 +1033,17 @@ export default function Page() {
 
         {/* Tabs */}
         <Tabs defaultValue="dashboard" className="space-y-6">
-          <TabsList className="grid h-auto w-full grid-cols-3 p-1 md:w-fit" style={{background:"#18181b", border:"1px solid rgba(255,255,255,0.15)", borderRadius:16}}>
-            <TabsTrigger value="dashboard" className="rounded-xl px-3 py-2 md:px-5" style={{color:"rgba(255,255,255,0.7)"}}>Dashboard</TabsTrigger>
-            <TabsTrigger value="campanas" className="rounded-xl px-3 py-2 md:px-5" style={{color:"rgba(255,255,255,0.7)"}}>Campañas</TabsTrigger>
-            <TabsTrigger value="calendario" className="rounded-xl px-3 py-2 md:px-5" style={{color:"rgba(255,255,255,0.7)"}}>Calendario</TabsTrigger>
-          </TabsList>
           <style>{`
-            [role="tablist"] [role="tab"][data-state="active"] {
-              background: #10b981 !important;
-              color: #000 !important;
-              font-weight: 600;
-            }
-            [role="tablist"] [role="tab"][data-state="inactive"] {
-              background: transparent !important;
-              color: rgba(255,255,255,0.7) !important;
-            }
+            #chivtabs { background: #18181b; border: 1px solid rgba(255,255,255,0.15); border-radius: 16px; }
+            #chivtabs button[role="tab"][data-state="active"] { background: #10b981 !important; color: #000 !important; font-weight: 700; border-radius: 10px; }
+            #chivtabs button[role="tab"][data-state="inactive"] { background: transparent !important; color: rgba(255,255,255,0.7) !important; }
+            #chivtabs button[role="tab"] { color: rgba(255,255,255,0.7); }
           `}</style>
+          <TabsList id="chivtabs" className="grid h-auto w-full grid-cols-3 p-1 md:w-fit">
+            <TabsTrigger value="dashboard" className="rounded-xl px-3 py-2 md:px-5">Dashboard</TabsTrigger>
+            <TabsTrigger value="campanas" className="rounded-xl px-3 py-2 md:px-5">Campañas</TabsTrigger>
+            <TabsTrigger value="calendario" className="rounded-xl px-3 py-2 md:px-5">Calendario</TabsTrigger>
+          </TabsList>
 
           {/* Tab: Dashboard */}
           <TabsContent value="dashboard" className="space-y-4">
