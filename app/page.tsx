@@ -1011,33 +1011,44 @@ export default function Page() {
         {/* KPIs */}
         <div className="space-y-3">
           {/* Mi Total — destacado */}
-          <div className="rounded-[24px] bg-gradient-to-br from-emerald-500 to-teal-600 p-6 shadow-[0_8px_32px_rgba(16,185,129,0.25)]">
+          <div style={{background:"linear-gradient(135deg, #10b981, #0d9488)", borderRadius:24, padding:24, boxShadow:"0 8px 32px rgba(16,185,129,0.25)"}}>
             <p className="text-sm font-bold tracking-widest text-emerald-100 uppercase">MI TOTAL</p>
             <p className="mt-1 text-4xl font-bold tracking-tight text-white">{currency(totals.totalYo)}</p>
             <p className="mt-1 text-xs text-emerald-200 uppercase tracking-widest">La que voy juntando</p>
           </div>
           {/* Pendiente + Total General */}
           <div className="grid grid-cols-2 gap-3">
-            <div className="rounded-[20px] border border-orange-500/20 bg-orange-500/10 p-4">
-              <p className="text-xs font-medium text-orange-300/70">Pendiente</p>
-              <p className="mt-1 text-xl font-bold text-orange-300">{currency(totals.totalPendiente)}</p>
-              <p className="mt-0.5 text-[11px] text-orange-300/50">Por cobrar</p>
+            <div style={{borderRadius:20, border:"1px solid rgba(249,115,22,0.25)", background:"rgba(249,115,22,0.1)", padding:16}}>
+              <p style={{fontSize:12, fontWeight:500, color:"rgba(253,186,116,0.7)"}}>Pendiente</p>
+              <p style={{marginTop:4, fontSize:20, fontWeight:700, color:"#fb923c"}}>{currency(totals.totalPendiente)}</p>
+              <p style={{marginTop:2, fontSize:11, color:"rgba(253,186,116,0.5)"}}>Por cobrar</p>
             </div>
-            <div className="rounded-[20px] border border-white/10 bg-white/5 p-4">
-              <p className="text-xs font-medium text-white/50">Total General</p>
-              <p className="mt-1 text-xl font-bold text-white">{currency(totals.totalGeneral)}</p>
-              <p className="mt-0.5 text-[11px] text-white/30">Sin comisión</p>
+            <div style={{borderRadius:20, border:"1px solid rgba(255,255,255,0.1)", background:"rgba(255,255,255,0.05)", padding:16}}>
+              <p style={{fontSize:12, fontWeight:500, color:"rgba(255,255,255,0.5)"}}>Total General</p>
+              <p style={{marginTop:4, fontSize:20, fontWeight:700, color:"white"}}>{currency(totals.totalGeneral)}</p>
+              <p style={{marginTop:2, fontSize:11, color:"rgba(255,255,255,0.3)"}}>Sin comisión</p>
             </div>
           </div>
         </div>
 
         {/* Tabs */}
         <Tabs defaultValue="dashboard" className="space-y-6">
-          <TabsList className="grid h-auto w-full grid-cols-3 rounded-2xl p-1 md:w-fit" style={{background:"#18181b", border:"1px solid rgba(255,255,255,0.15)"}}>
-            <TabsTrigger value="dashboard" className="rounded-xl px-3 py-2 md:px-5 !text-white data-[state=active]:!bg-emerald-500 data-[state=active]:!text-white data-[state=inactive]:opacity-60">Dashboard</TabsTrigger>
-            <TabsTrigger value="campanas" className="rounded-xl px-3 py-2 md:px-5 !text-white data-[state=active]:!bg-emerald-500 data-[state=active]:!text-white data-[state=inactive]:opacity-60">Campañas</TabsTrigger>
-            <TabsTrigger value="calendario" className="rounded-xl px-3 py-2 md:px-5 !text-white data-[state=active]:!bg-emerald-500 data-[state=active]:!text-white data-[state=inactive]:opacity-60">Calendario</TabsTrigger>
+          <TabsList className="grid h-auto w-full grid-cols-3 p-1 md:w-fit" style={{background:"#18181b", border:"1px solid rgba(255,255,255,0.15)", borderRadius:16}}>
+            <TabsTrigger value="dashboard" className="rounded-xl px-3 py-2 md:px-5" style={{color:"rgba(255,255,255,0.7)"}}>Dashboard</TabsTrigger>
+            <TabsTrigger value="campanas" className="rounded-xl px-3 py-2 md:px-5" style={{color:"rgba(255,255,255,0.7)"}}>Campañas</TabsTrigger>
+            <TabsTrigger value="calendario" className="rounded-xl px-3 py-2 md:px-5" style={{color:"rgba(255,255,255,0.7)"}}>Calendario</TabsTrigger>
           </TabsList>
+          <style>{`
+            [role="tablist"] [role="tab"][data-state="active"] {
+              background: #10b981 !important;
+              color: #000 !important;
+              font-weight: 600;
+            }
+            [role="tablist"] [role="tab"][data-state="inactive"] {
+              background: transparent !important;
+              color: rgba(255,255,255,0.7) !important;
+            }
+          `}</style>
 
           {/* Tab: Dashboard */}
           <TabsContent value="dashboard" className="space-y-4">
