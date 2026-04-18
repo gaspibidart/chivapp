@@ -633,6 +633,88 @@ function ErrorToast({
   );
 }
 
+
+// ─── Componente: CalendarioTab ────────────────────────────────────────────────
+
+function CalendarioTab({ campaigns }: { campaigns: Campaign[] }) {
+  const today = new Date();
+  const currentMonth = today.getMonth();
+
+  const [expanded, setExpanded] = useState<Record<number, boolean>>(() => {
+    const init: Record<number, boolean> = {};
+    monthNames.forEach((_, i) => { init[i] = i >= currentMonth; });
+    return init;
+  });
+
+  return (
+    <div className="space-y-2">
+      {monthNames.map((month, index) => {
+        const items = campaigns.filter((c) => parseMonth(c.cobro) === index);
+        const total = items.reduce((acc, item) => acc + amountValue(item), 0);
+        const isPast = index < currentMonth;
+        const isOpen = expanded[index];
+
+        return (
+          <div
+            key={month}
+            style={{borderRadius:20, border:"1px solid rgba(255,255,255,0.08)", background: isPast ? "rgba(255,255,255,0.03)" : "rgba(255,255,255,0.06)"}}
+          >
+            {/* Header siempre visible — toca para colapsar/expandir */}
+            <button
+              onClick={() => setExpanded((prev) => ({ ...prev, [index]: !prev[index] }))}
+              className="flex w-full items-center justify-between px-4 py-3"
+            >
+              <div className="flex items-center gap-3">
+                <span style={{fontSize:15, fontWeight: isPast ? 400 : 600, color: isPast ? "rgba(255,255,255,0.35)" : "white"}}>
+                  {month}
+                </span>
+                {items.length > 0 && (
+                  <span style={{fontSize:11, background:"rgba(255,255,255,0.08)", color:"rgba(255,255,255,0.4)", borderRadius:999, padding:"2px 8px"}}>
+                    {items.length}
+                  </span>
+                )}
+              </div>
+              <div className="flex items-center gap-3">
+                <span style={{fontSize:14, fontWeight:600, color: total > 0 ? "#34d399" : "rgba(255,255,255,0.2)"}}>
+                  {total > 0 ? currency(total) : "—"}
+                </span>
+                <span style={{color:"rgba(255,255,255,0.3)", fontSize:12}}>{isOpen ? "▲" : "▼"}</span>
+              </div>
+            </button>
+
+            {/* Contenido expandible */}
+            {isOpen && (
+              <div className="space-y-2 px-4 pb-4">
+                {items.length ? (
+                  items.map((item) => (
+                    <div key={item.id} style={{borderRadius:14, border:"1px solid rgba(255,255,255,0.08)", background:"rgba(255,255,255,0.04)", padding:"12px 14px"}}>
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="min-w-0">
+                          <p style={{fontWeight:600, color:"white", fontSize:14}}>{item.marca}</p>
+                          <p style={{fontSize:12, color:"rgba(255,255,255,0.35)", marginTop:1}}>{item.contenido}</p>
+                        </div>
+                        <div className="text-right shrink-0">
+                          <p style={{fontSize:15, fontWeight:700, color:"#34d399"}}>{currency(amountValue(item))}</p>
+                          <p style={{fontSize:11, color:"rgba(255,255,255,0.3)"}}>{formatDateAR(item.cobro)}</p>
+                        </div>
+                      </div>
+                      <div className="mt-2 flex justify-end">
+                        <StatusBadge item={item} />
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <p style={{fontSize:13, color:"rgba(255,255,255,0.25)", paddingBottom:4}}>Sin campañas.</p>
+                )}
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 // ─── Página principal ─────────────────────────────────────────────────────────
 
 export default function Page() {
@@ -1014,20 +1096,13 @@ export default function Page() {
           <div style={{background:"linear-gradient(135deg, #10b981, #0d9488)", borderRadius:24, padding:24, boxShadow:"0 8px 32px rgba(16,185,129,0.25)"}}>
             <p className="text-sm font-bold tracking-widest text-emerald-100 uppercase">MI TOTAL</p>
             <p className="mt-1 text-4xl font-bold tracking-tight text-white">{currency(totals.totalYo)}</p>
-            <p className="mt-1 text-xs text-emerald-200 uppercase tracking-widest">La que voy juntando</p>
+            <p className="mt-1 text-xs text-emerald-200 uppercase tracking-widest">Ganado en el año</p>
           </div>
-          {/* Pendiente + Total General */}
-          <div className="grid grid-cols-2 gap-3">
-            <div style={{borderRadius:20, border:"1px solid rgba(249,115,22,0.25)", background:"rgba(249,115,22,0.1)", padding:16}}>
-              <p style={{fontSize:12, fontWeight:500, color:"rgba(253,186,116,0.7)"}}>Pendiente</p>
-              <p style={{marginTop:4, fontSize:20, fontWeight:700, color:"#fb923c"}}>{currency(totals.totalPendiente)}</p>
-              <p style={{marginTop:2, fontSize:11, color:"rgba(253,186,116,0.5)"}}>Por cobrar</p>
-            </div>
-            <div style={{borderRadius:20, border:"1px solid rgba(255,255,255,0.1)", background:"rgba(255,255,255,0.05)", padding:16}}>
-              <p style={{fontSize:12, fontWeight:500, color:"rgba(255,255,255,0.5)"}}>Total General</p>
-              <p style={{marginTop:4, fontSize:20, fontWeight:700, color:"white"}}>{currency(totals.totalGeneral)}</p>
-              <p style={{marginTop:2, fontSize:11, color:"rgba(255,255,255,0.3)"}}>Sin comisión</p>
-            </div>
+          {/* Pendiente */}
+          <div style={{borderRadius:20, border:"1px solid rgba(249,115,22,0.25)", background:"rgba(249,115,22,0.1)", padding:16}}>
+            <p style={{fontSize:12, fontWeight:500, color:"rgba(253,186,116,0.7)"}}>Pendiente de cobro</p>
+            <p style={{marginTop:4, fontSize:24, fontWeight:700, color:"#fb923c"}}>{currency(totals.totalPendiente)}</p>
+            <p style={{marginTop:2, fontSize:11, color:"rgba(253,186,116,0.5)"}}>Por cobrar</p>
           </div>
         </div>
 
@@ -1139,89 +1214,53 @@ export default function Page() {
                     key={item.id}
                     className="overflow-hidden rounded-[24px] border border-white/10 bg-white/5"
                   >
-                    <CardContent className="space-y-4 p-4">
-                      <div className="flex items-start justify-between gap-3">
-                        <div>
-                          <p className="text-lg font-semibold text-white">{item.marca}</p>
-                          <p className="text-sm text-white/40">{item.campana}</p>
+                    <CardContent className="p-4 space-y-3">
+                      {/* Fila 1: marca + badge + botones */}
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="min-w-0">
+                          <p className="font-bold text-white leading-tight">{item.marca}</p>
+                          <p className="text-xs text-white/40">{item.campana !== "-" ? item.campana : ""}</p>
                         </div>
-                        <StatusBadge item={item} />
-                      </div>
-
-                      <div className="grid grid-cols-1 gap-2 text-sm md:grid-cols-3">
-                        <div className="font-bold text-emerald-400">
-                          <span className="text-white/50 font-normal">YO:</span>{" "}
-                          {currency(item.yoCash)}
-                        </div>
-                        <div className="font-bold text-white/70">
-                          <span className="text-white/50 font-normal">VP:</span>{" "}
-                          {currency(item.vpCash)}
-                        </div>
-                        <div>
-                          <span className="text-white/40">Fee:</span> <span className="text-white/70">{currency(item.fee)}</span>
-                        </div>
-                        <div>
-                          <span className="text-white/40">Pago a:</span> <span className="text-white/70">{item.pagoA} días</span>
-                        </div>
-                        <div>
-                          <span className="text-white/40">Cobro:</span>{" "}
-                          <span className="text-white/70">{formatDateAR(item.cobro)}</span>
-                        </div>
-                        <div>
-                          <span className="text-white/40">Publicación:</span>{" "}
-                          <span className="text-white/70">{formatDateAR(item.publicacion)}</span>
-                        </div>
-                        <div>
-                          <span className="text-slate-500">Cobro por:</span>{" "}
-                          <span
-                            className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${
-                              item.tipoCobro === "transferencia"
-                                ? "bg-sky-500/20 text-sky-300"
-                                : "bg-white/10 text-white/60"
-                            }`}
-                          >
-                            {item.tipoCobro === "transferencia" ? "Transferencia" : "Cash"}
-                          </span>
-                        </div>
-                        <div className="md:col-span-3">
-                          <span className="text-slate-500">Contenido:</span> {item.contenido}
+                        <div className="flex items-center gap-2 shrink-0">
+                          <StatusBadge item={item} />
+                          <button onClick={() => openEditCampaign(item)} className="rounded-xl border border-white/10 bg-white/5 p-2 text-white/60 hover:bg-white/10">
+                            <Pencil className="h-3.5 w-3.5" />
+                          </button>
+                          <button onClick={() => handleDeleteRequest(item.id)} className="rounded-xl border border-white/10 bg-white/5 p-2 text-white/40 hover:bg-white/10">
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
                         </div>
                       </div>
 
-                      <div className="mt-3 space-y-2 rounded-2xl border border-white/10 bg-white/5 p-3">
-                        <div className="flex items-center justify-between gap-3 rounded-xl bg-white/5 px-3 py-3">
-                          <span className="text-sm text-white/60">Factura enviada</span>
-                          <Switch
-                            checked={item.facturaEnviada}
-                            onCheckedChange={() => toggleFactura(item.id)}
-                          />
+                      {/* Fila 2: YO grande + info secundaria */}
+                      <div className="flex items-end justify-between gap-3">
+                        <div>
+                          <p className="text-xs text-white/40 uppercase tracking-wide">YO</p>
+                          <p className="text-2xl font-bold text-emerald-400">{currency(item.yoCash)}</p>
                         </div>
-                        <div className="flex items-center justify-between gap-3 rounded-xl bg-white/5 px-3 py-3">
-                          <span className="text-sm text-white/60">Cobrado</span>
-                          <Switch
-                            checked={item.cobrado}
-                            onCheckedChange={() => toggleCobrado(item.id)}
-                          />
+                        <div className="text-right text-xs text-white/50 space-y-0.5">
+                          <p>VP: {currency(item.vpCash)}</p>
+                          <p>Fee: {currency(item.fee)}</p>
+                          <p>{item.tipoCobro === "transferencia" ? "Transferencia" : "Cash"} · {item.pagoA}d</p>
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="flex-1 rounded-xl border-white/10 bg-white/5 text-white hover:bg-white/10"
-                          onClick={() => openEditCampaign(item)}
-                        >
-                          <Pencil className="mr-2 h-4 w-4" /> Editar
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="rounded-xl border-white/10 bg-white/5 text-white/60 hover:bg-white/10"
-                          onClick={() => handleDeleteRequest(item.id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                      {/* Fila 3: contenido + fecha */}
+                      <div className="flex items-center justify-between text-xs text-white/40">
+                        <p className="truncate flex-1 mr-2">{item.contenido}</p>
+                        <p className="shrink-0">{formatDateAR(item.cobro)}</p>
+                      </div>
+
+                      {/* Fila 4: switches compactos lado a lado */}
+                      <div className="flex gap-2">
+                        <div className="flex flex-1 items-center justify-between rounded-xl border border-white/10 bg-white/5 px-3 py-2">
+                          <span className="text-xs text-white/50">Factura</span>
+                          <Switch checked={item.facturaEnviada} onCheckedChange={() => toggleFactura(item.id)} />
+                        </div>
+                        <div className="flex flex-1 items-center justify-between rounded-xl border border-white/10 bg-white/5 px-3 py-2">
+                          <span className="text-xs text-white/50">Cobrado</span>
+                          <Switch checked={item.cobrado} onCheckedChange={() => toggleCobrado(item.id)} />
+                        </div>
                       </div>
                     </CardContent>
                   </Card>
@@ -1279,58 +1318,7 @@ export default function Page() {
           </div>}
 
           {/* Tab: Calendario */}
-          {activeTab === "calendario" && <div className="space-y-6">
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-              {monthNames.map((month, index) => {
-                const items = campaigns.filter((c) => parseMonth(c.cobro) === index);
-                const total = items.reduce((acc, item) => acc + amountValue(item), 0);
-                return (
-                  <motion.div
-                    key={month}
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                  >
-                    <Card className="h-full rounded-[24px] border border-white/15 bg-[#111118]">
-                      <CardHeader>
-                        <div className="flex items-center justify-between gap-3">
-                          <CardTitle className="text-base font-semibold text-white">{month}</CardTitle>
-                          <Badge style={{background:"rgba(16,185,129,0.15)", border:"1px solid rgba(16,185,129,0.3)", color:"rgb(52,211,153)"}} className="rounded-full px-3 py-1">
-                            {currency(total)}
-                          </Badge>
-                        </div>
-                      </CardHeader>
-                      <CardContent className="space-y-3">
-                        {items.length ? (
-                          items.map((item) => (
-                            <div
-                              key={item.id}
-                              className="rounded-3xl border border-slate-200 bg-slate-50/80 p-4"
-                            >
-                              <div className="flex items-start justify-between gap-3">
-                                <div>
-                                  <p className="font-semibold text-white">{item.marca}</p>
-                                  <p className="text-sm text-white/40">
-                                    {formatDateAR(item.cobro)}
-                                  </p>
-                                </div>
-                                <StatusBadge item={item} />
-                              </div>
-                              <p className="mt-3 text-sm text-white/40">{item.contenido}</p>
-                              <p className="mt-2 text-sm font-semibold text-emerald-400">
-                                {currency(amountValue(item))}
-                              </p>
-                            </div>
-                          ))
-                        ) : (
-                          <p className="text-sm text-white/30">Sin campañas cargadas.</p>
-                        )}
-                      </CardContent>
-                    </Card>
-                  </motion.div>
-                );
-              })}
-            </div>
-          </div>}
+          {activeTab === "calendario" && <CalendarioTab campaigns={campaigns} />}
         </div>
 
         {/* Respaldo */}
