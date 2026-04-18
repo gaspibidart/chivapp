@@ -14,7 +14,6 @@ import {
   DialogTrigger,
 } from "../components/ui/dialog";
 import { Checkbox } from "../components/ui/checkbox";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
 import { Switch } from "../components/ui/switch";
 import {
   BarChart3,
@@ -659,6 +658,7 @@ export default function Page() {
 
   // Estado para el diálogo de confirmación de borrado
   const [searchOpen, setSearchOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<"dashboard"|"campanas"|"calendario">("dashboard");
   const [confirmDelete, setConfirmDelete] = useState<number | null>(null);
   // Estado para errores inline (reemplaza window.alert)
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -1032,21 +1032,25 @@ export default function Page() {
         </div>
 
         {/* Tabs */}
-        <Tabs defaultValue="dashboard" className="space-y-6">
-          <style>{`
-            #chivtabs { background: #18181b; border: 1px solid rgba(255,255,255,0.15); border-radius: 16px; }
-            #chivtabs button[role="tab"][data-state="active"] { background: #10b981 !important; color: #000 !important; font-weight: 700; border-radius: 10px; }
-            #chivtabs button[role="tab"][data-state="inactive"] { background: transparent !important; color: rgba(255,255,255,0.7) !important; }
-            #chivtabs button[role="tab"] { color: rgba(255,255,255,0.7); }
-          `}</style>
-          <TabsList id="chivtabs" className="grid h-auto w-full grid-cols-3 p-1 md:w-fit">
-            <TabsTrigger value="dashboard" className="rounded-xl px-3 py-2 md:px-5">Dashboard</TabsTrigger>
-            <TabsTrigger value="campanas" className="rounded-xl px-3 py-2 md:px-5">Campañas</TabsTrigger>
-            <TabsTrigger value="calendario" className="rounded-xl px-3 py-2 md:px-5">Calendario</TabsTrigger>
-          </TabsList>
+        <div className="space-y-6">
+          <div className="flex w-full gap-1 rounded-2xl p-1 md:w-fit" style={{background:"#18181b", border:"1px solid rgba(255,255,255,0.15)"}}>
+            {(["dashboard","campanas","calendario"] as const).map((tab) => (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                className="flex-1 rounded-xl px-3 py-2 text-sm font-medium transition-all md:flex-none md:px-5"
+                style={activeTab === tab
+                  ? {background:"#10b981", color:"#000", fontWeight:700}
+                  : {background:"transparent", color:"rgba(255,255,255,0.65)"}
+                }
+              >
+                {tab === "dashboard" ? "Dashboard" : tab === "campanas" ? "Campañas" : "Calendario"}
+              </button>
+            ))}
+          </div>
 
           {/* Tab: Dashboard */}
-          <TabsContent value="dashboard" className="space-y-4">
+          {activeTab === "dashboard" && <div className="space-y-4">
             {/* Próximo cobro — primero y destacado */}
             <div className="rounded-[24px] border border-white/10 bg-white/5 p-5">
               <p className="mb-3 text-sm font-semibold text-white/50 uppercase tracking-wide">Próximo cobro</p>
@@ -1085,10 +1089,10 @@ export default function Page() {
                 </ResponsiveContainer>
               </div>
             </div>
-          </TabsContent>
+          </div>}
 
           {/* Tab: Campañas */}
-          <TabsContent value="campanas" className="space-y-4">
+          {activeTab === "campanas" && <div className="space-y-4">
             {/* Filtros: ícono de búsqueda colapsable + selects */}
             <div className="flex items-center gap-2">
               <button
@@ -1272,10 +1276,10 @@ export default function Page() {
                 </div>
               </div>
             </div>
-          </TabsContent>
+          </div>}
 
           {/* Tab: Calendario */}
-          <TabsContent value="calendario" className="space-y-6">
+          {activeTab === "calendario" && <div className="space-y-6">
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
               {monthNames.map((month, index) => {
                 const items = campaigns.filter((c) => parseMonth(c.cobro) === index);
@@ -1326,8 +1330,8 @@ export default function Page() {
                 );
               })}
             </div>
-          </TabsContent>
-        </Tabs>
+          </div>}
+        </div>
 
         {/* Respaldo */}
         <Card className="rounded-[30px] border border-white/60 bg-white/85 shadow-[0_20px_60px_rgba(15,23,42,0.08)] backdrop-blur">
