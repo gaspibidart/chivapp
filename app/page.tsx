@@ -1240,7 +1240,7 @@ export default function Page() {
                         </div>
                         <div className="text-right text-xs text-white/50 space-y-0.5">
                           <p>VP: {currency(item.vpCash)}</p>
-                          <p>Fee: {currency(item.fee)}</p>
+                          <p style={{color:"#fb923c"}}>Fee: {currency(item.fee)}</p>
                           <p>{item.tipoCobro === "transferencia" ? "Transferencia" : "Cash"} · {item.pagoA}d</p>
                         </div>
                       </div>
@@ -1248,7 +1248,7 @@ export default function Page() {
                       {/* Fila 3: contenido + fecha */}
                       <div className="flex items-center justify-between text-xs text-white/40">
                         <p className="truncate flex-1 mr-2">{item.contenido}</p>
-                        <p className="shrink-0">{formatDateAR(item.cobro)}</p>
+                        <p className="shrink-0 text-white/40">Cobro: {formatDateAR(item.cobro)}</p>
                       </div>
 
                       {/* Fila 4: switches compactos lado a lado */}
