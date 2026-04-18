@@ -123,7 +123,7 @@ const emptyForm: FormState = {
   campana: "",
   contenidoItems: createContenidoState(),
   publicacion: "",
-  pagoA: 30,
+  pagoA: 0,
   fee: "",
   tipoCobro: "cash",
   facturaEnviada: false,
@@ -1010,16 +1010,16 @@ export default function Page() {
         <div className="space-y-3">
           {/* Mi Total — destacado */}
           <div className="rounded-[24px] bg-gradient-to-br from-emerald-500 to-teal-600 p-6 shadow-[0_8px_32px_rgba(16,185,129,0.25)]">
-            <p className="text-sm font-medium text-emerald-100">Mi Total</p>
+            <p className="text-sm font-bold tracking-widest text-emerald-100 uppercase">MI TOTAL</p>
             <p className="mt-1 text-4xl font-bold tracking-tight text-white">{currency(totals.totalYo)}</p>
-            <p className="mt-1 text-xs text-emerald-200">Lo que te quedó a vos</p>
+            <p className="mt-1 text-xs text-emerald-200 uppercase tracking-widest">La que voy juntando</p>
           </div>
           {/* Pendiente + Total General */}
           <div className="grid grid-cols-2 gap-3">
-            <div className="rounded-[20px] border border-white/10 bg-white/5 p-4">
-              <p className="text-xs font-medium text-white/50">Pendiente</p>
-              <p className="mt-1 text-xl font-bold text-white">{currency(totals.totalPendiente)}</p>
-              <p className="mt-0.5 text-[11px] text-white/30">Por cobrar</p>
+            <div className="rounded-[20px] border border-orange-500/20 bg-orange-500/10 p-4">
+              <p className="text-xs font-medium text-orange-300/70">Pendiente</p>
+              <p className="mt-1 text-xl font-bold text-orange-300">{currency(totals.totalPendiente)}</p>
+              <p className="mt-0.5 text-[11px] text-orange-300/50">Por cobrar</p>
             </div>
             <div className="rounded-[20px] border border-white/10 bg-white/5 p-4">
               <p className="text-xs font-medium text-white/50">Total General</p>
@@ -1031,10 +1031,10 @@ export default function Page() {
 
         {/* Tabs */}
         <Tabs defaultValue="dashboard" className="space-y-6">
-          <TabsList className="grid h-auto w-full grid-cols-3 rounded-2xl border border-white/10 bg-white/5 p-1 md:w-fit">
-            <TabsTrigger value="dashboard" className="rounded-xl px-3 py-2 md:px-5">Dashboard</TabsTrigger>
-            <TabsTrigger value="campanas" className="rounded-xl px-3 py-2 md:px-5">Campañas</TabsTrigger>
-            <TabsTrigger value="calendario" className="rounded-xl px-3 py-2 md:px-5">Calendario</TabsTrigger>
+          <TabsList className="grid h-auto w-full grid-cols-3 rounded-2xl border border-white/20 bg-[#18181b] p-1 md:w-fit">
+            <TabsTrigger value="dashboard" className="rounded-xl px-3 py-2 text-white data-[state=active]:text-white data-[state=active]:bg-emerald-500 md:px-5">Dashboard</TabsTrigger>
+            <TabsTrigger value="campanas" className="rounded-xl px-3 py-2 text-white data-[state=active]:text-white data-[state=active]:bg-emerald-500 md:px-5">Campañas</TabsTrigger>
+            <TabsTrigger value="calendario" className="rounded-xl px-3 py-2 text-white data-[state=active]:text-white data-[state=active]:bg-emerald-500 md:px-5">Calendario</TabsTrigger>
           </TabsList>
 
           {/* Tab: Dashboard */}
@@ -1278,10 +1278,10 @@ export default function Page() {
                     initial={{ opacity: 0, y: 8 }}
                     animate={{ opacity: 1, y: 0 }}
                   >
-                    <Card className="h-full rounded-[24px] border border-white/10 bg-white/5">
+                    <Card className="h-full rounded-[24px] border border-white/15 bg-[#111118]">
                       <CardHeader>
                         <div className="flex items-center justify-between gap-3">
-                          <CardTitle className="text-lg text-white">{month}</CardTitle>
+                          <CardTitle className="text-base font-semibold text-white">{month}</CardTitle>
                           <Badge className="rounded-full border border-white/10 bg-white/10 px-3 py-1 text-white/70 hover:bg-white/10">
                             {currency(total)}
                           </Badge>
