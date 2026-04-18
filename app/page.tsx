@@ -649,7 +649,7 @@ function CalendarioTab({ campaigns }: { campaigns: Campaign[] }) {
   return (
     <div className="space-y-2">
       {monthNames.map((month, index) => {
-        const items = campaigns.filter((c) => parseMonth(c.cobro) === index);
+        const items = campaigns.filter((c) => parseMonth(c.cobro) === index).sort((a, b) => new Date(a.cobro).getTime() - new Date(b.cobro).getTime());
         const total = items.reduce((acc, item) => acc + amountValue(item), 0);
         const isPast = index < currentMonth;
         const isOpen = expanded[index];
