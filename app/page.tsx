@@ -1031,10 +1031,10 @@ export default function Page() {
 
         {/* Tabs */}
         <Tabs defaultValue="dashboard" className="space-y-6">
-          <TabsList className="grid h-auto w-full grid-cols-3 rounded-2xl border border-white/20 bg-[#18181b] p-1 md:w-fit">
-            <TabsTrigger value="dashboard" className="rounded-xl px-3 py-2 text-white data-[state=active]:text-white data-[state=active]:bg-emerald-500 md:px-5">Dashboard</TabsTrigger>
-            <TabsTrigger value="campanas" className="rounded-xl px-3 py-2 text-white data-[state=active]:text-white data-[state=active]:bg-emerald-500 md:px-5">Campañas</TabsTrigger>
-            <TabsTrigger value="calendario" className="rounded-xl px-3 py-2 text-white data-[state=active]:text-white data-[state=active]:bg-emerald-500 md:px-5">Calendario</TabsTrigger>
+          <TabsList style={{background:"#18181b", border:"1px solid rgba(255,255,255,0.12)"}} className="grid h-auto w-full grid-cols-3 rounded-2xl p-1 md:w-fit">
+            <TabsTrigger value="dashboard" style={{color:"rgba(255,255,255,0.9)"}} className="rounded-xl px-3 py-2 md:px-5 data-[state=active]:!bg-emerald-500 data-[state=active]:!text-white data-[state=inactive]:!text-white/70">Dashboard</TabsTrigger>
+            <TabsTrigger value="campanas" style={{color:"rgba(255,255,255,0.9)"}} className="rounded-xl px-3 py-2 md:px-5 data-[state=active]:!bg-emerald-500 data-[state=active]:!text-white data-[state=inactive]:!text-white/70">Campañas</TabsTrigger>
+            <TabsTrigger value="calendario" style={{color:"rgba(255,255,255,0.9)"}} className="rounded-xl px-3 py-2 md:px-5 data-[state=active]:!bg-emerald-500 data-[state=active]:!text-white data-[state=inactive]:!text-white/70">Calendario</TabsTrigger>
           </TabsList>
 
           {/* Tab: Dashboard */}
@@ -1282,7 +1282,7 @@ export default function Page() {
                       <CardHeader>
                         <div className="flex items-center justify-between gap-3">
                           <CardTitle className="text-base font-semibold text-white">{month}</CardTitle>
-                          <Badge className="rounded-full border border-white/10 bg-white/10 px-3 py-1 text-white/70 hover:bg-white/10">
+                          <Badge style={{background:"rgba(16,185,129,0.15)", border:"1px solid rgba(16,185,129,0.3)", color:"rgb(52,211,153)"}} className="rounded-full px-3 py-1">
                             {currency(total)}
                           </Badge>
                         </div>
