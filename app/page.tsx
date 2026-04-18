@@ -1323,40 +1323,16 @@ export default function Page() {
           {activeTab === "calendario" && <CalendarioTab campaigns={campaigns} />}
         </div>
 
-        {/* Respaldo */}
-        <Card className="rounded-[30px] border border-white/60 bg-white/85 shadow-[0_20px_60px_rgba(15,23,42,0.08)] backdrop-blur">
-          <CardContent className="flex flex-col gap-4 p-5 md:flex-row md:items-center md:justify-between">
-            <div>
-              <h3 className="text-base font-semibold text-white">Respaldo</h3>
-              <p className="text-sm text-white/40">
-                Guardá o recuperá una copia manual de tus campañas.
-              </p>
-            </div>
-            <div className="flex flex-col gap-2 sm:flex-row">
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="application/json"
-                className="hidden"
-                onChange={handleImport}
-              />
-              <Button
-                variant="outline"
-                onClick={() => fileInputRef.current?.click()}
-                className="rounded-2xl border-slate-200 bg-white/80"
-              >
-                <Upload className="mr-2 h-4 w-4" /> Importar
-              </Button>
-              <Button
-                variant="outline"
-                onClick={exportData}
-                className="rounded-2xl border-slate-200 bg-white/80"
-              >
-                <Download className="mr-2 h-4 w-4" /> Exportar
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+        {/* Respaldo — discreto */}
+        <div className="flex items-center justify-end gap-3 px-1 pb-2">
+          <input ref={fileInputRef} type="file" accept="application/json" className="hidden" onChange={handleImport} />
+          <button onClick={() => fileInputRef.current?.click()} className="flex items-center gap-1.5 text-xs text-white/20 hover:text-white/40 transition">
+            <Upload className="h-3 w-3" /> Importar
+          </button>
+          <button onClick={exportData} className="flex items-center gap-1.5 text-xs text-white/20 hover:text-white/40 transition">
+            <Download className="h-3 w-3" /> Exportar
+          </button>
+        </div>
       </div>
 
       {/* FIX: Diálogo de confirmación de borrado (reemplaza window.confirm) */}
