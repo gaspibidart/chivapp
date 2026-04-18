@@ -1104,7 +1104,7 @@ export default function Page() {
             <p style={{fontSize:12, fontWeight:500, color:"rgba(253,186,116,0.7)"}}>Pendiente de cobro</p>
             <p style={{marginTop:4, fontSize:24, fontWeight:700, color:"#fb923c"}}>{currency(totals.totalPendiente)}</p>
             <div style={{marginTop:8, display:"flex", flexWrap:"wrap", gap:6}}>
-              {campaigns.filter((c) => !c.cobrado).map((c) => (
+              {campaigns.filter((c) => !c.cobrado).sort((a, b) => new Date(a.cobro).getTime() - new Date(b.cobro).getTime()).map((c) => (
                 <span key={c.id} style={{fontSize:11, fontWeight:600, color:"rgba(253,186,116,0.8)", background:"rgba(249,115,22,0.15)", borderRadius:999, padding:"2px 10px"}}>
                   {c.marca}
                 </span>
