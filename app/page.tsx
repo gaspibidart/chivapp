@@ -658,6 +658,7 @@ export default function Page() {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   // Estado para el diálogo de confirmación de borrado
+  const [searchOpen, setSearchOpen] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState<number | null>(null);
   // Estado para errores inline (reemplaza window.alert)
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -816,7 +817,7 @@ export default function Page() {
   }
 
   return (
-    <div className="min-h-screen overflow-x-hidden bg-[radial-gradient(circle_at_top,#ecfeff_0%,#f8fafc_35%,#eef2ff_100%)] p-2 text-slate-900 md:p-6">
+    <div className="min-h-screen overflow-x-hidden bg-[#0a0a0f] p-2 text-white md:p-4">
       <div className="mx-auto w-full max-w-7xl space-y-6 overflow-x-hidden">
 
         {/* Header */}
@@ -824,14 +825,14 @@ export default function Page() {
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.35 }}
-          className="flex min-w-0 flex-col gap-4 rounded-[32px] border border-white/60 bg-white/80 p-5 shadow-[0_20px_60px_rgba(15,23,42,0.08)] backdrop-blur-xl md:flex-row md:items-center md:justify-between md:p-7"
+          className="flex min-w-0 flex-col gap-4 rounded-[24px] border border-white/10 bg-white/5 p-5 backdrop-blur-xl md:flex-row md:items-center md:justify-between md:p-6"
         >
           <div>
-            <p className="text-sm font-semibold tracking-wide text-emerald-600">ChivAPP</p>
-            <h1 className="text-2xl font-bold tracking-tight text-slate-900 md:text-3xl">
+            <p className="text-sm font-semibold tracking-wide text-emerald-400">ChivAPP</p>
+            <h1 className="text-2xl font-bold tracking-tight text-white md:text-3xl">
               CONTROL DE CAMPAÑAS
             </h1>
-            <p className="mt-1 text-sm text-slate-500">Toda la datita organizada</p>
+            <p className="mt-1 text-sm text-white/40">Toda la datita organizada</p>
           </div>
 
           <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:justify-end">
@@ -840,7 +841,7 @@ export default function Page() {
               <DialogTrigger>
                 <Button
                   onClick={openNewCampaign}
-                  className="rounded-2xl bg-slate-900 px-5 py-6 text-sm font-medium text-white shadow-lg hover:bg-slate-800"
+                  className="rounded-2xl bg-emerald-500 px-5 py-6 text-sm font-medium text-white shadow-lg hover:bg-emerald-400"
                 >
                   <Plus className="mr-2 h-4 w-4" /> Nueva campaña
                 </Button>
@@ -1006,163 +1007,165 @@ export default function Page() {
         </motion.div>
 
         {/* KPIs */}
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-          <KPI title="Total General" value={currency(totals.totalGeneral)} hint="Campañas sin comisión" icon={CircleDollarSign} />
-          <KPI title="Mi Total" value={currency(totals.totalYo)} hint="La del bolsillo" icon={Wallet} />
-          <KPI title="Pendiente" value={currency(totals.totalPendiente)} hint="Campañas aún no cobradas" icon={CalendarDays} />
-          <KPI title="Facturas enviadas" value={String(totals.facturas)} hint="Cantidad de campañas facturadas" icon={FileCheck} />
+        <div className="space-y-3">
+          {/* Mi Total — destacado */}
+          <div className="rounded-[24px] bg-gradient-to-br from-emerald-500 to-teal-600 p-6 shadow-[0_8px_32px_rgba(16,185,129,0.25)]">
+            <p className="text-sm font-medium text-emerald-100">Mi Total</p>
+            <p className="mt-1 text-4xl font-bold tracking-tight text-white">{currency(totals.totalYo)}</p>
+            <p className="mt-1 text-xs text-emerald-200">Lo que te quedó a vos</p>
+          </div>
+          {/* Pendiente + Total General */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="rounded-[20px] border border-white/10 bg-white/5 p-4">
+              <p className="text-xs font-medium text-white/50">Pendiente</p>
+              <p className="mt-1 text-xl font-bold text-white">{currency(totals.totalPendiente)}</p>
+              <p className="mt-0.5 text-[11px] text-white/30">Por cobrar</p>
+            </div>
+            <div className="rounded-[20px] border border-white/10 bg-white/5 p-4">
+              <p className="text-xs font-medium text-white/50">Total General</p>
+              <p className="mt-1 text-xl font-bold text-white">{currency(totals.totalGeneral)}</p>
+              <p className="mt-0.5 text-[11px] text-white/30">Sin comisión</p>
+            </div>
+          </div>
         </div>
 
         {/* Tabs */}
         <Tabs defaultValue="dashboard" className="space-y-6">
-          <TabsList className="grid h-auto w-full grid-cols-3 rounded-2xl border border-white/60 bg-white/80 p-1 shadow-sm backdrop-blur md:w-fit">
+          <TabsList className="grid h-auto w-full grid-cols-3 rounded-2xl border border-white/10 bg-white/5 p-1 md:w-fit">
             <TabsTrigger value="dashboard" className="rounded-xl px-3 py-2 md:px-5">Dashboard</TabsTrigger>
             <TabsTrigger value="campanas" className="rounded-xl px-3 py-2 md:px-5">Campañas</TabsTrigger>
             <TabsTrigger value="calendario" className="rounded-xl px-3 py-2 md:px-5">Calendario</TabsTrigger>
           </TabsList>
 
           {/* Tab: Dashboard */}
-          <TabsContent value="dashboard" className="space-y-6">
-            <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
-              <Card className="rounded-[30px] border border-white/60 bg-white/85 shadow-[0_20px_60px_rgba(15,23,42,0.08)] backdrop-blur xl:col-span-2">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-lg text-slate-900">
-                    <BarChart3 className="h-5 w-5 text-emerald-600" />
-                    Ingresos por mes
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="h-[280px] md:h-[320px]">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={monthlyData}>
-                        <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                        <XAxis dataKey="month" tickLine={false} axisLine={false} />
-                        <YAxis
-                          tickFormatter={(v) => `${Math.round(v / 1000000)}M`}
-                          tickLine={false}
-                          axisLine={false}
-                        />
-                        <Tooltip formatter={(value) => currency(Number(value))} />
-                        <Bar dataKey="total" radius={[14, 14, 0, 0]} />
-                      </BarChart>
-                    </ResponsiveContainer>
+          <TabsContent value="dashboard" className="space-y-4">
+            {/* Próximo cobro — primero y destacado */}
+            <div className="rounded-[24px] border border-white/10 bg-white/5 p-5">
+              <p className="mb-3 text-sm font-semibold text-white/50 uppercase tracking-wide">Próximo cobro</p>
+              {nextPending ? (
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <p className="text-2xl font-bold text-white">{nextPending.marca}</p>
+                    <p className="text-sm text-white/40 mt-0.5">{nextPending.contenido}</p>
+                    <p className="mt-3 text-3xl font-bold text-emerald-400">{currency(amountValue(nextPending))}</p>
+                    <p className="text-sm text-white/40 mt-1">{formatDateAR(nextPending.cobro)}</p>
                   </div>
-                </CardContent>
-              </Card>
+                  <StatusBadge item={nextPending} />
+                </div>
+              ) : (
+                <p className="text-sm text-white/40">No hay campañas pendientes.</p>
+              )}
+            </div>
 
-              <Card className="rounded-[30px] border border-white/60 bg-white/85 shadow-[0_20px_60px_rgba(15,23,42,0.08)] backdrop-blur">
-                <CardHeader>
-                  <CardTitle className="text-lg text-slate-900">Próximo cobro</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {nextPending ? (
-                    <>
-                      <div className="rounded-3xl border border-slate-200 bg-gradient-to-br from-slate-50 to-cyan-50 p-4">
-                        <p className="text-sm text-slate-500">Marca</p>
-                        <p className="text-xl font-bold text-slate-900">{nextPending.marca}</p>
-                        <p className="mt-3 text-sm text-slate-500">Fecha de cobro</p>
-                        <p className="font-semibold text-slate-900">{formatDateAR(nextPending.cobro)}</p>
-                        <p className="mt-3 text-sm text-slate-500">Monto</p>
-                        <p className="font-semibold text-slate-900">{currency(amountValue(nextPending))}</p>
-                        <p className="mt-3 text-sm text-slate-500">Contenido</p>
-                        <p className="font-medium text-slate-800">{nextPending.contenido}</p>
-                      </div>
-                      <div><StatusBadge item={nextPending} /></div>
-                    </>
-                  ) : (
-                    <p className="text-sm text-slate-500">No hay campañas pendientes.</p>
-                  )}
-                </CardContent>
-              </Card>
+            {/* Gráfico ingresos por mes */}
+            <div className="rounded-[24px] border border-white/10 bg-white/5 p-5">
+              <p className="mb-4 text-sm font-semibold text-white/50 uppercase tracking-wide flex items-center gap-2">
+                <BarChart3 className="h-4 w-4" /> Ingresos por mes
+              </p>
+              <div className="h-[220px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={monthlyData}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.06)" />
+                    <XAxis dataKey="month" tickLine={false} axisLine={false} tick={{ fill: "rgba(255,255,255,0.35)", fontSize: 12 }} />
+                    <YAxis tickFormatter={(v) => `${Math.round(v / 1000000)}M`} tickLine={false} axisLine={false} tick={{ fill: "rgba(255,255,255,0.35)", fontSize: 12 }} />
+                    <Tooltip
+                      formatter={(value) => currency(Number(value))}
+                      contentStyle={{ background: "#1a1a2e", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 12, color: "white" }}
+                    />
+                    <Bar dataKey="total" fill="#10b981" radius={[10, 10, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
             </div>
           </TabsContent>
 
           {/* Tab: Campañas */}
-          <TabsContent value="campanas" className="space-y-6">
-            <Card className="rounded-[30px] border border-white/60 bg-white/85 shadow-[0_20px_60px_rgba(15,23,42,0.08)] backdrop-blur">
-              <CardContent className="p-5">
-                <div className="flex flex-col gap-3 md:flex-row">
-                  <div className="relative flex-1">
-                    <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                    <Input
-                      value={search}
-                      onChange={(e) => setSearch(e.target.value)}
-                      placeholder="Buscar por marca, campaña o contenido"
-                      className="h-12 rounded-2xl border-slate-200 bg-white pl-11"
-                    />
-                  </div>
-
-                  <select
-                    value={monthFilter}
-                    onChange={(e) => setMonthFilter(e.target.value)}
-                    className="h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm text-slate-900 md:w-[200px]"
-                  >
-                    <option value="all">Todos los meses</option>
-                    {monthNames.map((month, index) => (
-                      <option key={month} value={String(index)}>{month}</option>
-                    ))}
-                  </select>
-
-                  <select
-                    value={statusFilter}
-                    onChange={(e) => setStatusFilter(e.target.value)}
-                    className="h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm text-slate-900 md:w-[180px]"
-                  >
-                    <option value="all">Todos</option>
-                    <option value="cobrado">Cobrado</option>
-                    <option value="facturado">Factura enviada</option>
-                    <option value="pendiente">Pendiente</option>
-                  </select>
-                </div>
-              </CardContent>
-            </Card>
+          <TabsContent value="campanas" className="space-y-4">
+            {/* Filtros: ícono de búsqueda colapsable + selects */}
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setSearchOpen((v) => !v)}
+                className="flex h-10 w-10 items-center justify-center rounded-2xl border border-white/10 bg-white/5 text-white/60 hover:bg-white/10 transition"
+              >
+                <Search className="h-4 w-4" />
+              </button>
+              {searchOpen && (
+                <input
+                  autoFocus
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Buscar marca, campaña..."
+                  className="h-10 flex-1 rounded-2xl border border-white/10 bg-white/5 px-4 text-[16px] text-white placeholder:text-white/30 outline-none"
+                />
+              )}
+              <select
+                value={monthFilter}
+                onChange={(e) => setMonthFilter(e.target.value)}
+                className="h-10 flex-1 rounded-2xl border border-white/10 bg-[#0a0a0f] px-3 text-[16px] text-white/70 md:w-[160px] md:flex-none"
+              >
+                <option value="all">Todos los meses</option>
+                {monthNames.map((month, index) => (
+                  <option key={month} value={String(index)}>{month}</option>
+                ))}
+              </select>
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="h-10 flex-1 rounded-2xl border border-white/10 bg-[#0a0a0f] px-3 text-[16px] text-white/70 md:w-[140px] md:flex-none"
+              >
+                <option value="all">Todos</option>
+                <option value="cobrado">Cobrado</option>
+                <option value="facturado">Facturado</option>
+                <option value="pendiente">Pendiente</option>
+              </select>
+            </div>
 
             <div className="space-y-6">
               <div className="grid grid-cols-1 gap-4">
                 {upcomingCampaigns.map((item) => (
                   <Card
                     key={item.id}
-                    className="overflow-hidden rounded-[24px] border border-white/60 bg-white/90 shadow-[0_10px_40px_rgba(15,23,42,0.06)] backdrop-blur"
+                    className="overflow-hidden rounded-[24px] border border-white/10 bg-white/5"
                   >
                     <CardContent className="space-y-4 p-4">
                       <div className="flex items-start justify-between gap-3">
                         <div>
-                          <p className="text-lg font-semibold text-slate-900">{item.marca}</p>
-                          <p className="text-sm text-slate-500">{item.campana}</p>
+                          <p className="text-lg font-semibold text-white">{item.marca}</p>
+                          <p className="text-sm text-white/40">{item.campana}</p>
                         </div>
                         <StatusBadge item={item} />
                       </div>
 
                       <div className="grid grid-cols-1 gap-2 text-sm md:grid-cols-3">
-                        <div className="font-bold text-slate-900">
-                          <span className="font-bold text-slate-900">YO:</span>{" "}
+                        <div className="font-bold text-emerald-400">
+                          <span className="text-white/50 font-normal">YO:</span>{" "}
                           {currency(item.yoCash)}
                         </div>
-                        <div className="font-bold text-slate-900">
-                          <span className="font-bold text-slate-900">VP:</span>{" "}
+                        <div className="font-bold text-white/70">
+                          <span className="text-white/50 font-normal">VP:</span>{" "}
                           {currency(item.vpCash)}
                         </div>
                         <div>
-                          <span className="text-slate-500">Fee:</span> {currency(item.fee)}
+                          <span className="text-white/40">Fee:</span> <span className="text-white/70">{currency(item.fee)}</span>
                         </div>
                         <div>
-                          <span className="text-slate-500">Pago a:</span> {item.pagoA} días
+                          <span className="text-white/40">Pago a:</span> <span className="text-white/70">{item.pagoA} días</span>
                         </div>
                         <div>
-                          <span className="text-slate-500">Cobro:</span>{" "}
-                          {formatDateAR(item.cobro)}
+                          <span className="text-white/40">Cobro:</span>{" "}
+                          <span className="text-white/70">{formatDateAR(item.cobro)}</span>
                         </div>
                         <div>
-                          <span className="text-slate-500">Publicación:</span>{" "}
-                          {formatDateAR(item.publicacion)}
+                          <span className="text-white/40">Publicación:</span>{" "}
+                          <span className="text-white/70">{formatDateAR(item.publicacion)}</span>
                         </div>
                         <div>
                           <span className="text-slate-500">Cobro por:</span>{" "}
                           <span
                             className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${
                               item.tipoCobro === "transferencia"
-                                ? "bg-sky-100 text-sky-700"
-                                : "bg-slate-100 text-slate-700"
+                                ? "bg-sky-500/20 text-sky-300"
+                                : "bg-white/10 text-white/60"
                             }`}
                           >
                             {item.tipoCobro === "transferencia" ? "Transferencia" : "Cash"}
@@ -1173,16 +1176,16 @@ export default function Page() {
                         </div>
                       </div>
 
-                      <div className="mt-3 space-y-2 rounded-2xl border border-slate-200 bg-slate-50 p-3">
-                        <div className="flex items-center justify-between gap-3 rounded-xl bg-white px-3 py-3">
-                          <span className="text-sm text-slate-700">Factura enviada</span>
+                      <div className="mt-3 space-y-2 rounded-2xl border border-white/10 bg-white/5 p-3">
+                        <div className="flex items-center justify-between gap-3 rounded-xl bg-white/5 px-3 py-3">
+                          <span className="text-sm text-white/60">Factura enviada</span>
                           <Switch
                             checked={item.facturaEnviada}
                             onCheckedChange={() => toggleFactura(item.id)}
                           />
                         </div>
-                        <div className="flex items-center justify-between gap-3 rounded-xl bg-white px-3 py-3">
-                          <span className="text-sm text-slate-700">Cobrado</span>
+                        <div className="flex items-center justify-between gap-3 rounded-xl bg-white/5 px-3 py-3">
+                          <span className="text-sm text-white/60">Cobrado</span>
                           <Switch
                             checked={item.cobrado}
                             onCheckedChange={() => toggleCobrado(item.id)}
@@ -1194,7 +1197,7 @@ export default function Page() {
                         <Button
                           variant="outline"
                           size="sm"
-                          className="flex-1 rounded-xl border-slate-200 bg-white"
+                          className="flex-1 rounded-xl border-white/10 bg-white/5 text-white hover:bg-white/10"
                           onClick={() => openEditCampaign(item)}
                         >
                           <Pencil className="mr-2 h-4 w-4" /> Editar
@@ -1202,7 +1205,7 @@ export default function Page() {
                         <Button
                           variant="outline"
                           size="sm"
-                          className="rounded-xl border-slate-200 bg-white"
+                          className="rounded-xl border-white/10 bg-white/5 text-white/60 hover:bg-white/10"
                           onClick={() => handleDeleteRequest(item.id)}
                         >
                           <Trash2 className="h-4 w-4" />
@@ -1216,7 +1219,7 @@ export default function Page() {
               <div className="pt-2">
                 <div className="mb-3 flex items-center gap-3">
                   <div className="h-px flex-1 bg-slate-200" />
-                  <p className="text-sm font-semibold uppercase tracking-wide text-slate-500">
+                  <p className="text-sm font-semibold uppercase tracking-wide text-white/30">
                     Cobradas
                   </p>
                   <div className="h-px flex-1 bg-slate-200" />
@@ -1227,26 +1230,26 @@ export default function Page() {
                     paidCampaigns.map((item) => (
                       <Card
                         key={item.id}
-                        className="rounded-[20px] border border-slate-200 bg-slate-50/70 shadow-none"
+                        className="rounded-[20px] border border-white/10 bg-white/5"
                       >
                         <CardContent className="flex items-center justify-between gap-3 p-4">
                           <div className="min-w-0">
-                            <p className="truncate text-sm font-semibold text-slate-900">
+                            <p className="truncate text-sm font-semibold text-white">
                               {item.marca}
                             </p>
-                            <p className="truncate text-xs text-slate-500">{item.contenido}</p>
+                            <p className="truncate text-xs text-white/40">{item.contenido}</p>
                           </div>
                           <div className="flex items-center gap-3">
                             <div className="text-right">
-                              <p className="text-[11px] uppercase tracking-wide text-slate-500">YO</p>
-                              <p className="text-sm font-bold text-slate-900">
+                              <p className="text-[11px] uppercase tracking-wide text-white/40">YO</p>
+                              <p className="text-sm font-bold text-emerald-400">
                                 {currency(item.yoCash)}
                               </p>
                             </div>
                             <Button
                               variant="outline"
                               size="sm"
-                              className="rounded-xl border-slate-200 bg-white"
+                              className="rounded-xl border-white/10 bg-white/5 text-white/60 hover:bg-white/10"
                               onClick={() => openEditCampaign(item)}
                             >
                               <Pencil className="h-4 w-4" />
@@ -1275,11 +1278,11 @@ export default function Page() {
                     initial={{ opacity: 0, y: 8 }}
                     animate={{ opacity: 1, y: 0 }}
                   >
-                    <Card className="h-full rounded-[30px] border border-white/60 bg-white/85 shadow-[0_20px_60px_rgba(15,23,42,0.08)] backdrop-blur">
+                    <Card className="h-full rounded-[24px] border border-white/10 bg-white/5">
                       <CardHeader>
                         <div className="flex items-center justify-between gap-3">
-                          <CardTitle className="text-lg text-slate-900">{month}</CardTitle>
-                          <Badge className="rounded-full border border-slate-200 bg-white px-3 py-1 text-slate-700 hover:bg-white">
+                          <CardTitle className="text-lg text-white">{month}</CardTitle>
+                          <Badge className="rounded-full border border-white/10 bg-white/10 px-3 py-1 text-white/70 hover:bg-white/10">
                             {currency(total)}
                           </Badge>
                         </div>
@@ -1293,21 +1296,21 @@ export default function Page() {
                             >
                               <div className="flex items-start justify-between gap-3">
                                 <div>
-                                  <p className="font-semibold text-slate-900">{item.marca}</p>
-                                  <p className="text-sm text-slate-500">
+                                  <p className="font-semibold text-white">{item.marca}</p>
+                                  <p className="text-sm text-white/40">
                                     {formatDateAR(item.cobro)}
                                   </p>
                                 </div>
                                 <StatusBadge item={item} />
                               </div>
-                              <p className="mt-3 text-sm text-slate-500">{item.contenido}</p>
-                              <p className="mt-2 text-sm font-semibold text-slate-900">
+                              <p className="mt-3 text-sm text-white/40">{item.contenido}</p>
+                              <p className="mt-2 text-sm font-semibold text-emerald-400">
                                 {currency(amountValue(item))}
                               </p>
                             </div>
                           ))
                         ) : (
-                          <p className="text-sm text-slate-500">Sin campañas cargadas.</p>
+                          <p className="text-sm text-white/30">Sin campañas cargadas.</p>
                         )}
                       </CardContent>
                     </Card>
@@ -1322,8 +1325,8 @@ export default function Page() {
         <Card className="rounded-[30px] border border-white/60 bg-white/85 shadow-[0_20px_60px_rgba(15,23,42,0.08)] backdrop-blur">
           <CardContent className="flex flex-col gap-4 p-5 md:flex-row md:items-center md:justify-between">
             <div>
-              <h3 className="text-base font-semibold text-slate-900">Respaldo</h3>
-              <p className="text-sm text-slate-500">
+              <h3 className="text-base font-semibold text-white">Respaldo</h3>
+              <p className="text-sm text-white/40">
                 Guardá o recuperá una copia manual de tus campañas.
               </p>
             </div>
