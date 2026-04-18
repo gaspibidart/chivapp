@@ -817,6 +817,8 @@ export default function Page() {
   }
 
   return (
+    <>
+    <style>{`html, body { background: #0a0a0f !important; }`}</style>
     <div className="min-h-screen overflow-x-hidden bg-[#0a0a0f] p-2 text-white md:p-4">
       <div className="mx-auto w-full max-w-7xl space-y-6 overflow-x-hidden">
 
@@ -1031,10 +1033,10 @@ export default function Page() {
 
         {/* Tabs */}
         <Tabs defaultValue="dashboard" className="space-y-6">
-          <TabsList className="grid h-auto w-full grid-cols-3 rounded-2xl p-1 md:w-fit [&>button]:!text-white [&>button[data-state=active]]:!bg-emerald-500 [&>button[data-state=active]]:!text-white [&>button[data-state=inactive]]:!text-white/80" style={{background:"#18181b", border:"1px solid rgba(255,255,255,0.15)"}}>
-            <TabsTrigger value="dashboard" className="rounded-xl px-3 py-2 md:px-5">Dashboard</TabsTrigger>
-            <TabsTrigger value="campanas" className="rounded-xl px-3 py-2 md:px-5">Campañas</TabsTrigger>
-            <TabsTrigger value="calendario" className="rounded-xl px-3 py-2 md:px-5">Calendario</TabsTrigger>
+          <TabsList className="grid h-auto w-full grid-cols-3 rounded-2xl p-1 md:w-fit" style={{background:"#18181b", border:"1px solid rgba(255,255,255,0.15)"}}>
+            <TabsTrigger value="dashboard" className="rounded-xl px-3 py-2 md:px-5 !text-white data-[state=active]:!bg-emerald-500 data-[state=active]:!text-white data-[state=inactive]:opacity-60">Dashboard</TabsTrigger>
+            <TabsTrigger value="campanas" className="rounded-xl px-3 py-2 md:px-5 !text-white data-[state=active]:!bg-emerald-500 data-[state=active]:!text-white data-[state=inactive]:opacity-60">Campañas</TabsTrigger>
+            <TabsTrigger value="calendario" className="rounded-xl px-3 py-2 md:px-5 !text-white data-[state=active]:!bg-emerald-500 data-[state=active]:!text-white data-[state=inactive]:opacity-60">Calendario</TabsTrigger>
           </TabsList>
 
           {/* Tab: Dashboard */}
@@ -1369,5 +1371,6 @@ export default function Page() {
       {/* FIX: Toast de error inline (reemplaza window.alert) */}
       <ErrorToast message={errorMsg} onClose={() => setErrorMsg(null)} />
     </div>
+    </>
   );
 }
