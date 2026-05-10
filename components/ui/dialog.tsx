@@ -82,10 +82,10 @@ export function DialogContent({
       />
 
       <div className="absolute inset-0 flex items-end justify-center md:items-center">
-        <div
-          className={`relative h-[100dvh] w-full overflow-y-auto bg-white shadow-2xl md:h-auto md:max-h-[90vh] md:max-w-3xl md:rounded-[32px] ${className}`}
-          onClick={(e) => e.stopPropagation()}
-        >
+      <div
+  className={`relative h-[100dvh] w-full max-w-full overflow-x-hidden overflow-y-auto bg-white shadow-2xl md:h-auto md:max-h-[90vh] md:max-w-3xl md:rounded-[32px] ${className}`}
+  onClick={(e) => e.stopPropagation()}
+>
           <button
             onClick={() => setOpen(false)}
             className="absolute right-4 top-4 z-10 rounded-full bg-slate-100 px-3 py-1 text-sm font-medium text-slate-600 hover:bg-slate-200"
@@ -93,7 +93,9 @@ export function DialogContent({
             Cerrar
           </button>
 
-          <div className="min-h-full p-4 pt-14 md:p-8 md:pt-8">{children}</div>
+          <div className="min-h-full w-full overflow-x-hidden p-4 pt-14 md:p-8 md:pt-8">
+  {children}
+</div>
         </div>
       </div>
     </div>,

@@ -820,11 +820,14 @@ export default function Page() {
   const totals = useMemo(() => {
     const totalGeneral = campaigns.reduce((acc, c) => acc + c.fee, 0);
     const totalYo = campaigns.reduce((acc, c) => acc + amountValue(c), 0);
+    const totalCobrado = campaigns
+      .filter((c) => c.cobrado)
+      .reduce((acc, c) => acc + amountValue(c), 0);
     const totalPendiente = campaigns
       .filter((c) => !c.cobrado)
       .reduce((acc, c) => acc + amountValue(c), 0);
     const facturas = campaigns.filter((c) => c.facturaEnviada).length;
-    return { totalGeneral, totalYo, totalPendiente, facturas };
+    return { totalGeneral, totalYo, totalCobrado, totalPendiente, facturas };
   }, [campaigns]);
 
   const nextPending = useMemo(() => {
@@ -1093,22 +1096,31 @@ export default function Page() {
 
         {/* KPIs */}
         <div className="space-y-3">
-          {/* Mi Total — destacado */}
+          {/* Total Actual — campañas cobradas */}
           <div style={{background:"linear-gradient(135deg, #10b981, #0d9488)", borderRadius:24, padding:24, boxShadow:"0 8px 32px rgba(16,185,129,0.25)"}}>
-            <p className="text-sm font-bold tracking-widest text-emerald-100 uppercase">MI TOTAL</p>
-            <p className="mt-1 text-4xl font-bold tracking-tight text-white">{currency(totals.totalYo)}</p>
-            <p className="mt-1 text-xs text-emerald-200 uppercase tracking-widest">Ganado en el año</p>
+            <p className="text-sm font-bold tracking-widest text-emerald-100 uppercase">Total Actual</p>
+            <p className="mt-1 text-4xl font-bold tracking-tight text-white">{currency(totals.totalCobrado)}</p>
+            <p className="mt-1 text-xs text-emerald-200 uppercase tracking-widest">Ganado hasta ahora</p>
           </div>
-          {/* Pendiente */}
-          <div style={{borderRadius:20, border:"1px solid rgba(249,115,22,0.25)", background:"rgba(249,115,22,0.1)", padding:16}}>
-            <p style={{fontSize:12, fontWeight:500, color:"rgba(253,186,116,0.7)"}}>Pendiente de cobro</p>
-            <p style={{marginTop:4, fontSize:24, fontWeight:700, color:"#fb923c"}}>{currency(totals.totalPendiente)}</p>
-            <div style={{marginTop:8, display:"flex", flexWrap:"wrap", gap:6}}>
-              {campaigns.filter((c) => !c.cobrado).sort((a, b) => new Date(a.cobro).getTime() - new Date(b.cobro).getTime()).map((c) => (
-                <span key={c.id} style={{fontSize:11, fontWeight:600, color:"rgba(253,186,116,0.8)", background:"rgba(249,115,22,0.15)", borderRadius:999, padding:"2px 10px"}}>
-                  {c.marca}
-                </span>
-              ))}
+          {/* Pendiente + Total Campañas */}
+          <div style={{display:"grid", gridTemplateColumns:"1fr 1fr", gap:12}}>
+            {/* Pendiente — naranja */}
+            <div style={{borderRadius:20, border:"1px solid rgba(249,115,22,0.25)", background:"rgba(249,115,22,0.1)", padding:16}}>
+              <p style={{fontSize:12, fontWeight:500, color:"rgba(253,186,116,0.7)"}}>Pendiente de cobro</p>
+              <p style={{marginTop:4, fontSize:22, fontWeight:700, color:"#fb923c"}}>{currency(totals.totalPendiente)}</p>
+              <div style={{marginTop:8, display:"flex", flexWrap:"wrap", gap:4}}>
+                {campaigns.filter((c) => !c.cobrado).sort((a, b) => new Date(a.cobro).getTime() - new Date(b.cobro).getTime()).map((c) => (
+                  <span key={c.id} style={{fontSize:10, fontWeight:600, color:"rgba(253,186,116,0.8)", background:"rgba(249,115,22,0.15)", borderRadius:999, padding:"2px 8px"}}>
+                    {c.marca}
+                  </span>
+                ))}
+              </div>
+            </div>
+            {/* Total Campañas — oscuro neutro */}
+            <div style={{borderRadius:20, border:"1px solid rgba(255,255,255,0.08)", background:"rgba(255,255,255,0.05)", padding:16}}>
+              <p style={{fontSize:12, fontWeight:500, color:"rgba(255,255,255,0.45)"}}>Total campañas</p>
+              <p style={{marginTop:4, fontSize:22, fontWeight:700, color:"rgba(255,255,255,0.9)"}}>{currency(totals.totalYo)}</p>
+              <p style={{marginTop:6, fontSize:10, color:"rgba(255,255,255,0.25)"}}>Suma de todas</p>
             </div>
           </div>
         </div>
