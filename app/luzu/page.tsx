@@ -728,7 +728,7 @@ export default function LuzuPage() {
                     <label className="mb-1 block text-xs font-medium text-slate-500">Evento</label>
                     <Input
                       value={form.evento}
-                      onChange={(e) => setForm({ ...form, evento: e.target.value })}
+                      onChange={(e) => setForm({ ...form, evento: e.target.value.toUpperCase() })}
                       placeholder="Ej: Streaming especial verano"
                       className="rounded-2xl border-slate-200"
                     />
@@ -855,7 +855,7 @@ export default function LuzuPage() {
                     {form.programa !== "AQN" && form.programa !== "NDN" && (
                       <Input
                         value={form.programa}
-                        onChange={(e) => setForm({ ...form, programa: e.target.value })}
+                        onChange={(e) => setForm({ ...form, programa: e.target.value.toUpperCase() })}
                         placeholder="Nombre del programa/evento especial"
                         className="mt-2 rounded-2xl border-slate-200"
                       />
