@@ -1498,14 +1498,12 @@ export default function Page() {
                                   {currency(item.yoCash)}
                                 </p>
                               </div>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="rounded-xl border-amber-500/15 bg-amber-500/[0.04] text-white/60 hover:bg-amber-500/10"
+                              <button
                                 onClick={() => openEditCampaign(item)}
+                                className="rounded-xl border border-amber-500/20 bg-amber-500/10 p-2 text-amber-200/80 hover:bg-amber-500/20"
                               >
                                 <Pencil className="h-4 w-4" />
-                              </Button>
+                              </button>
                             </div>
                           </div>
                           <div className="flex items-center justify-between rounded-xl border border-amber-500/15 bg-amber-500/[0.04] px-3 py-2">
@@ -1575,14 +1573,12 @@ export default function Page() {
                                   {currency(item.vpCash)}
                                 </p>
                               </div>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="rounded-xl border-rose-500/15 bg-rose-500/[0.04] text-white/50 hover:bg-rose-500/10"
+                              <button
                                 onClick={() => openEditCampaign(item)}
+                                className="rounded-xl border border-rose-500/20 bg-rose-500/10 p-2 text-rose-200/80 hover:bg-rose-500/20"
                               >
                                 <Eye className="h-4 w-4" />
-                              </Button>
+                              </button>
                             </div>
                           </CardContent>
                         </Card>
