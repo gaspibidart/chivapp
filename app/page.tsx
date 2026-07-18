@@ -7,15 +7,6 @@ import { Radio, Sparkles } from "lucide-react";
 export default function Home() {
   return (
     <main className="flex min-h-screen flex-col items-center justify-center gap-10 bg-[#0a0a0f] px-6 py-16">
-      <div className="text-center">
-        <p className="text-sm font-semibold uppercase tracking-[0.3em] text-white/30">
-          Panel de gestión
-        </p>
-        <h1 className="mt-2 text-3xl font-bold text-white md:text-4xl">
-          ¿Qué querés gestionar hoy?
-        </h1>
-      </div>
-
       <div className="grid w-full max-w-2xl grid-cols-1 gap-5 md:grid-cols-2">
         <Link href="/chivos" className="group">
           <motion.div
@@ -28,9 +19,7 @@ export default function Home() {
             </div>
             <div>
               <h2 className="text-2xl font-bold text-white">Chivos</h2>
-              <p className="mt-1 text-sm text-white/40">
-                Campañas, marcas y cobros de contenido para influencers.
-              </p>
+              <p className="mt-1 text-sm text-white/40">Gestión de campañas</p>
             </div>
           </motion.div>
         </Link>
@@ -45,10 +34,8 @@ export default function Home() {
               <Radio className="h-6 w-6 text-sky-400" />
             </div>
             <div>
-              <h2 className="text-2xl font-bold text-white">Luzu</h2>
-              <p className="mt-1 text-sm text-white/40">
-                Transmisiones, programas AQN / NDN y cobros.
-              </p>
+              <h2 className="text-2xl font-bold text-white">LUZU</h2>
+              <p className="mt-1 text-sm text-white/40">Gestión de eventos y TX</p>
             </div>
           </motion.div>
         </Link>

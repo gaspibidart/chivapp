@@ -10,6 +10,7 @@ type LuzuBody = {
   evento?: string;
   cantidad?: string | number;
   fechas?: unknown;
+  pagoA?: string | number;
   valores?: unknown;
   programa?: string;
   facturaEnviada?: boolean | string;
@@ -43,6 +44,7 @@ function buildLuzuUrl(action: "create" | "update", body: LuzuBody): string {
     `&evento=${encodeURIComponent(String(body.evento ?? ""))}` +
     `&cantidad=${encodeURIComponent(String(body.cantidad ?? 1))}` +
     `&fechas=${encodeURIComponent(fechasJson)}` +
+    `&pagoA=${encodeURIComponent(String(body.pagoA ?? 30))}` +
     `&valores=${encodeURIComponent(valoresJson)}` +
     `&programa=${encodeURIComponent(String(body.programa ?? ""))}` +
     `&facturaEnviada=${encodeURIComponent(String(body.facturaEnviada ?? false))}` +

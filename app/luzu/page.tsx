@@ -28,7 +28,7 @@ import {
 // ─── Tipos ──────────────────────────────────────────────────────────────────
 
 type Moneda = "$" | "USD";
-type Programa = "AQN" | "NDN";
+type Programa = string; // "AQN" | "NDN" | cualquier nombre custom vía "Otro"
 
 type Valor = { monto: number; moneda: Moneda };
 
@@ -37,6 +37,7 @@ type LuzuEvent = {
   evento: string;
   cantidad: number;
   fechas: string[];
+  pagoA: number;
   valores: Valor[];
   programa: Programa;
   facturaEnviada: boolean;
@@ -49,6 +50,7 @@ type RawLuzuRow = {
   evento?: string;
   cantidad?: string | number;
   fechas?: unknown;
+  pagoA?: string | number;
   valores?: unknown;
   programa?: string;
   facturaEnviada?: boolean | string;
@@ -62,6 +64,7 @@ type FormState = {
   evento: string;
   cantidad: number;
   fechas: string[];
+  pagoA: number;
   valores: FormValor[];
   programa: Programa;
   facturaEnviada: boolean;
@@ -116,6 +119,7 @@ function emptyFormState(): FormState {
     evento: "",
     cantidad: 1,
     fechas: [""],
+    pagoA: 30,
     valores: [{ monto: "", moneda: "$" }],
     programa: "AQN",
     facturaEnviada: false,
@@ -171,11 +175,12 @@ function normalizeEvents(raw: RawLuzuRow[]): LuzuEvent[] {
         evento: item.evento || "",
         cantidad: Number(item.cantidad) || fechas.length || 1,
         fechas: fechas.map((f) => normalizeDateInput(String(f))),
+        pagoA: item.pagoA !== undefined && item.pagoA !== "" ? Number(item.pagoA) : 30,
         valores: valores.map((v) => ({
           monto: Number(v?.monto) || 0,
           moneda: v?.moneda === "USD" ? ("USD" as const) : ("$" as const),
         })),
-        programa: item.programa === "NDN" ? ("NDN" as const) : ("AQN" as const),
+        programa: item.programa || "AQN",
         facturaEnviada:
           String(item.facturaEnviada).toLowerCase() === "true" || item.facturaEnviada === true,
         facturaFecha: normalizeDateInput(item.facturaFecha || ""),
@@ -184,15 +189,23 @@ function normalizeEvents(raw: RawLuzuRow[]): LuzuEvent[] {
     });
 }
 
-// La fecha más próxima (o más reciente si ya pasaron todas) de un evento.
+// Fecha de cobro = fecha del evento + "pagoA" días.
+function cobroDateFor(fecha: string, pagoA: number): string {
+  if (!fecha) return "";
+  const d = new Date(fecha + "T00:00:00");
+  if (isNaN(d.getTime())) return "";
+  d.setDate(d.getDate() + (Number(pagoA) || 0));
+  return d.toISOString().slice(0, 10);
+}
+
+// La fecha de COBRO más próxima (fecha del evento + pagoA días), o la más
+// reciente si ya pasaron todas.
 function nearestFecha(event: LuzuEvent): string {
-  if (!event.fechas.length) return "";
+  const cobros = event.fechas.filter(Boolean).map((f) => cobroDateFor(f, event.pagoA));
+  if (!cobros.length) return "";
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  const sorted = [...event.fechas].filter(Boolean).sort(
-    (a, b) => new Date(a).getTime() - new Date(b).getTime()
-  );
-  if (!sorted.length) return "";
+  const sorted = [...cobros].sort((a, b) => new Date(a).getTime() - new Date(b).getTime());
   const upcoming = sorted.find((f) => new Date(f).getTime() >= today.getTime());
   return upcoming || sorted[sorted.length - 1];
 }
@@ -237,6 +250,7 @@ function useLuzuEvents() {
           evento: form.evento,
           cantidad: form.cantidad,
           fechas: form.fechas.map((f) => normalizeDateInput(f)),
+          pagoA: Number(form.pagoA || 0),
           valores: form.valores.map((v) => ({
             monto: parseMoneyInput(v.monto),
             moneda: v.moneda,
@@ -330,34 +344,12 @@ function useLuzuEvents() {
 // ─── Componentes auxiliares ───────────────────────────────────────────────────
 
 function ProgramaBadge({ programa }: { programa: Programa }) {
+  const colorClass =
+    programa === "AQN" ? "bg-sky-500" : programa === "NDN" ? "bg-fuchsia-500" : "bg-slate-500";
   return (
-    <Badge
-      className={`rounded-full border-0 px-2.5 py-1 text-white ${
-        programa === "AQN" ? "bg-sky-500" : "bg-fuchsia-500"
-      }`}
-    >
+    <Badge className={`rounded-full border-0 px-2.5 py-1 text-white ${colorClass}`}>
       {programa}
     </Badge>
-  );
-}
-
-function SummaryCard({
-  label,
-  ars,
-  usd,
-  accent,
-}: {
-  label: string;
-  ars: number;
-  usd: number;
-  accent: string;
-}) {
-  return (
-    <div className="rounded-[20px] border border-white/10 bg-white/5 p-4">
-      <p className="text-[11px] font-medium uppercase tracking-wide text-white/40">{label}</p>
-      <p className={`mt-1 text-lg font-bold ${accent}`}>{currencyARS(ars)}</p>
-      {usd > 0 && <p className="mt-0.5 text-xs font-semibold text-emerald-400">{currencyUSD(usd)}</p>}
-    </div>
   );
 }
 
@@ -396,6 +388,8 @@ function EventCard({
             </div>
             <p className={`mt-1 text-xs ${finalized ? "text-white/30" : "text-white/40"}`}>
               {event.fechas.filter(Boolean).map((f) => formatDateAR(f)).join(" · ") || "Sin fecha"}
+              {" "}
+              <span className="text-white/25">· cobra a {event.pagoA}d</span>
             </p>
           </div>
           <div className="flex items-center gap-3">
@@ -485,7 +479,7 @@ function flattenOccurrences(events: LuzuEvent[]): Occurrence[] {
       result.push({
         id: `${ev.id}-${i}`,
         evento: ev.evento,
-        fecha,
+        fecha: cobroDateFor(fecha, ev.pagoA),
         monto: valor?.monto || 0,
         moneda: valor?.moneda || "$",
         programa: ev.programa,
@@ -608,6 +602,7 @@ export default function LuzuPage() {
       evento: event.evento,
       cantidad: event.cantidad || 1,
       fechas: event.fechas.length ? event.fechas : [""],
+      pagoA: event.pagoA ?? 30,
       valores: event.valores.length
         ? event.valores.map((v) => ({ monto: String(v.monto || ""), moneda: v.moneda }))
         : [{ monto: "", moneda: "$" }],
@@ -709,9 +704,7 @@ export default function LuzuPage() {
               <Link href="/" className="mb-1 inline-block text-xs text-white/30 hover:text-white/60">
                 ← Volver
               </Link>
-              <p className="text-sm font-semibold tracking-wide text-sky-400">LUZU</p>
-              <h1 className="text-2xl font-bold tracking-tight text-white md:text-3xl">TRANSMISIONES</h1>
-              <p className="mt-1 text-sm text-white/40">AQN / NDN — control de cobros</p>
+              <h1 className="text-2xl font-bold tracking-tight text-white md:text-3xl">LUZU</h1>
             </div>
 
             <Dialog open={open} onOpenChange={setOpen}>
@@ -741,24 +734,41 @@ export default function LuzuPage() {
                     />
                   </div>
 
-                  <div>
-                    <label className="mb-1 block text-xs font-medium text-slate-500">Cantidad</label>
-                    <div className="flex items-center gap-3">
-                      <button
-                        type="button"
-                        onClick={() => handleCantidadChange(-1)}
-                        className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50"
-                      >
-                        <Minus className="h-4 w-4" />
-                      </button>
-                      <span className="w-8 text-center text-lg font-bold text-slate-900">{form.cantidad}</span>
-                      <button
-                        type="button"
-                        onClick={() => handleCantidadChange(1)}
-                        className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50"
-                      >
-                        <Plus className="h-4 w-4" />
-                      </button>
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <div>
+                      <label className="mb-1 block text-xs font-medium text-slate-500">Cantidad</label>
+                      <div className="flex items-center gap-3">
+                        <button
+                          type="button"
+                          onClick={() => handleCantidadChange(-1)}
+                          className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50"
+                        >
+                          <Minus className="h-4 w-4" />
+                        </button>
+                        <span className="w-8 text-center text-lg font-bold text-slate-900">{form.cantidad}</span>
+                        <button
+                          type="button"
+                          onClick={() => handleCantidadChange(1)}
+                          className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50"
+                        >
+                          <Plus className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="mb-1 block text-xs font-medium text-slate-500">Pago a (días)</label>
+                      <Input
+                        type="text"
+                        inputMode="numeric"
+                        placeholder="30"
+                        value={form.pagoA === 0 ? "" : String(form.pagoA)}
+                        onChange={(e) => {
+                          const val = e.target.value.replace(/[^\d]/g, "");
+                          setForm({ ...form, pagoA: val === "" ? 0 : Number(val) });
+                        }}
+                        className="rounded-2xl border-slate-200"
+                      />
                     </div>
                   </div>
 
@@ -821,21 +831,35 @@ export default function LuzuPage() {
                   <div>
                     <label className="mb-2 block text-xs font-medium text-slate-500">Programa</label>
                     <div className="flex gap-2">
-                      {(["AQN", "NDN"] as const).map((p) => (
-                        <button
-                          key={p}
-                          type="button"
-                          onClick={() => setForm({ ...form, programa: p })}
-                          className={`flex-1 rounded-2xl border px-4 py-3 text-sm font-semibold transition ${
-                            form.programa === p
-                              ? "border-slate-900 bg-slate-900 text-white"
-                              : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
-                          }`}
-                        >
-                          {p}
-                        </button>
-                      ))}
+                      {(["AQN", "NDN", "Otro"] as const).map((p) => {
+                        const isCustom = form.programa !== "AQN" && form.programa !== "NDN";
+                        const isActive = p === "Otro" ? isCustom : form.programa === p;
+                        return (
+                          <button
+                            key={p}
+                            type="button"
+                            onClick={() =>
+                              setForm({ ...form, programa: p === "Otro" ? (isCustom ? form.programa : "") : p })
+                            }
+                            className={`flex-1 rounded-2xl border px-4 py-3 text-sm font-semibold transition ${
+                              isActive
+                                ? "border-slate-900 bg-slate-900 text-white"
+                                : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+                            }`}
+                          >
+                            {p}
+                          </button>
+                        );
+                      })}
                     </div>
+                    {form.programa !== "AQN" && form.programa !== "NDN" && (
+                      <Input
+                        value={form.programa}
+                        onChange={(e) => setForm({ ...form, programa: e.target.value })}
+                        placeholder="Nombre del programa/evento especial"
+                        className="mt-2 rounded-2xl border-slate-200"
+                      />
+                    )}
                   </div>
 
                   <div className="space-y-3 rounded-2xl border border-slate-200 bg-slate-50 p-4">
@@ -936,12 +960,43 @@ export default function LuzuPage() {
           )}
 
           {/* Resumen (KPIs) */}
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-5">
-            <SummaryCard label="Total gral" ars={totals.gral.ars} usd={totals.gral.usd} accent="text-white" />
-            <SummaryCard label="Total AQN" ars={totals.aqn.ars} usd={totals.aqn.usd} accent="text-sky-400" />
-            <SummaryCard label="Total NDN" ars={totals.ndn.ars} usd={totals.ndn.usd} accent="text-fuchsia-400" />
-            <SummaryCard label="A cobrar AQN" ars={totals.aCobrarAqn.ars} usd={totals.aCobrarAqn.usd} accent="text-amber-400" />
-            <SummaryCard label="A cobrar NDN" ars={totals.aCobrarNdn.ars} usd={totals.aCobrarNdn.usd} accent="text-amber-400" />
+          <div className="space-y-3">
+            {/* Total general — grande, degradado */}
+            <div style={{background:"linear-gradient(135deg, #0ea5e9, #0369a1)", borderRadius:24, padding:24, boxShadow:"0 8px 32px rgba(14,165,233,0.25)"}}>
+              <p className="text-sm font-bold tracking-widest text-sky-100 uppercase">Total general</p>
+              <p className="mt-1 text-4xl font-bold tracking-tight text-white">{currencyARS(totals.gral.ars)}</p>
+              {totals.gral.usd > 0 && (
+                <p className="mt-1 text-lg font-semibold text-sky-100">{currencyUSD(totals.gral.usd)}</p>
+              )}
+            </div>
+
+            {/* Total AQN + Total NDN */}
+            <div style={{display:"grid", gridTemplateColumns:"1fr 1fr", gap:12}}>
+              <div style={{borderRadius:20, border:"1px solid rgba(14,165,233,0.25)", background:"rgba(14,165,233,0.1)", padding:16}}>
+                <p style={{fontSize:12, fontWeight:500, color:"rgba(125,211,252,0.7)"}}>Total AQN</p>
+                <p style={{marginTop:4, fontSize:22, fontWeight:700, color:"#38bdf8"}}>{currencyARS(totals.aqn.ars)}</p>
+                {totals.aqn.usd > 0 && <p style={{marginTop:2, fontSize:12, fontWeight:600, color:"#7dd3fc"}}>{currencyUSD(totals.aqn.usd)}</p>}
+              </div>
+              <div style={{borderRadius:20, border:"1px solid rgba(217,70,239,0.25)", background:"rgba(217,70,239,0.1)", padding:16}}>
+                <p style={{fontSize:12, fontWeight:500, color:"rgba(240,171,252,0.7)"}}>Total NDN</p>
+                <p style={{marginTop:4, fontSize:22, fontWeight:700, color:"#e879f9"}}>{currencyARS(totals.ndn.ars)}</p>
+                {totals.ndn.usd > 0 && <p style={{marginTop:2, fontSize:12, fontWeight:600, color:"#f0abfc"}}>{currencyUSD(totals.ndn.usd)}</p>}
+              </div>
+            </div>
+
+            {/* A cobrar AQN + A cobrar NDN */}
+            <div style={{display:"grid", gridTemplateColumns:"1fr 1fr", gap:12}}>
+              <div style={{borderRadius:20, border:"1px solid rgba(249,115,22,0.25)", background:"rgba(249,115,22,0.1)", padding:16}}>
+                <p style={{fontSize:12, fontWeight:500, color:"rgba(253,186,116,0.7)"}}>A cobrar AQN</p>
+                <p style={{marginTop:4, fontSize:22, fontWeight:700, color:"#fb923c"}}>{currencyARS(totals.aCobrarAqn.ars)}</p>
+                {totals.aCobrarAqn.usd > 0 && <p style={{marginTop:2, fontSize:12, fontWeight:600, color:"#fdba74"}}>{currencyUSD(totals.aCobrarAqn.usd)}</p>}
+              </div>
+              <div style={{borderRadius:20, border:"1px solid rgba(249,115,22,0.25)", background:"rgba(249,115,22,0.1)", padding:16}}>
+                <p style={{fontSize:12, fontWeight:500, color:"rgba(253,186,116,0.7)"}}>A cobrar NDN</p>
+                <p style={{marginTop:4, fontSize:22, fontWeight:700, color:"#fb923c"}}>{currencyARS(totals.aCobrarNdn.ars)}</p>
+                {totals.aCobrarNdn.usd > 0 && <p style={{marginTop:2, fontSize:12, fontWeight:600, color:"#fdba74"}}>{currencyUSD(totals.aCobrarNdn.usd)}</p>}
+              </div>
+            </div>
           </div>
 
           {/* Tabs */}
