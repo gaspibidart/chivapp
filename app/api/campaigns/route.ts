@@ -59,7 +59,8 @@ function buildCampaignUrl(action: "create" | "update", body: CampaignBody): stri
     `&facturaEnviada=${encodeURIComponent(String(body.facturaEnviada ?? false))}` +
     `&facturaFecha=${encodeURIComponent(String(body.facturaFecha ?? ""))}` +
     `&cobrado=${encodeURIComponent(String(body.cobrado ?? false))}` +
-    `&pagadoVane=${encodeURIComponent(String(body.pagadoVane ?? false))}`
+    `&pagadoVane=${encodeURIComponent(String(body.pagadoVane ?? false))}` +
+    `&board=chivos`
   );
 }
 
@@ -67,7 +68,7 @@ function buildCampaignUrl(action: "create" | "update", body: CampaignBody): stri
 
 export async function GET() {
   try {
-    const response = await fetch(APPS_SCRIPT_URL, {
+    const response = await fetch(`${APPS_SCRIPT_URL}?board=chivos`, {
       method: "GET",
       cache: "no-store",
     });
@@ -153,7 +154,7 @@ export async function DELETE(req: NextRequest) {
       );
     }
 
-    const deleteUrl = `${APPS_SCRIPT_URL}?action=delete&id=${encodeURIComponent(String(body.id))}`;
+    const deleteUrl = `${APPS_SCRIPT_URL}?action=delete&id=${encodeURIComponent(String(body.id))}&board=chivos`;
 
     const response = await fetch(deleteUrl, {
       method: "GET",
