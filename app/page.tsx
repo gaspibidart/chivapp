@@ -22,6 +22,7 @@ import {
   ChevronUp,
   CircleDollarSign,
   Download,
+  Eye,
   FileCheck,
   Pencil,
   Plus,
@@ -1468,11 +1469,11 @@ export default function Page() {
 
               <div className="pt-2">
                 <div className="mb-3 flex items-center gap-3">
-                  <div className="h-px flex-1 bg-slate-200" />
-                  <p className="text-sm font-semibold uppercase tracking-wide text-white/30">
+                  <div className="h-px flex-1 bg-amber-500/20" />
+                  <p className="text-sm font-semibold uppercase tracking-wide text-amber-400/70">
                     Cobradas
                   </p>
-                  <div className="h-px flex-1 bg-slate-200" />
+                  <div className="h-px flex-1 bg-amber-500/20" />
                 </div>
 
                 <div className="space-y-3">
@@ -1480,12 +1481,12 @@ export default function Page() {
                     paidCampaigns.map((item) => (
                       <Card
                         key={item.id}
-                        className="rounded-[20px] border border-white/10 bg-white/5"
+                        className="rounded-[20px] border border-amber-500/15 bg-amber-500/[0.04]"
                       >
                         <CardContent className="space-y-3 p-4">
                           <div className="flex items-center justify-between gap-3">
                             <div className="min-w-0">
-                              <p className="truncate text-sm font-semibold text-white">
+                              <p className="truncate text-sm font-semibold text-white/90">
                                 {item.marca}
                               </p>
                               <p className="truncate text-xs text-white/40">{item.contenido}</p>
@@ -1500,17 +1501,17 @@ export default function Page() {
                               <Button
                                 variant="outline"
                                 size="sm"
-                                className="rounded-xl border-white/10 bg-white/5 text-white/60 hover:bg-white/10"
+                                className="rounded-xl border-amber-500/15 bg-amber-500/[0.04] text-white/60 hover:bg-amber-500/10"
                                 onClick={() => openEditCampaign(item)}
                               >
                                 <Pencil className="h-4 w-4" />
                               </Button>
                             </div>
                           </div>
-                          <div className="flex items-center justify-between rounded-xl border border-white/10 bg-white/5 px-3 py-2">
+                          <div className="flex items-center justify-between rounded-xl border border-amber-500/15 bg-amber-500/[0.04] px-3 py-2">
                             <div className="flex items-center gap-2">
                               <span className="text-xs text-white/50">Pagado a Vane</span>
-                              <span className="text-xs font-semibold text-white/70">
+                              <span className="text-xs font-semibold text-amber-300/80">
                                 VP: {currency(item.vpCash)}
                               </span>
                             </div>
@@ -1569,6 +1570,10 @@ export default function Page() {
                                 <p className="text-sm font-bold text-emerald-400/70">
                                   {currency(item.yoCash)}
                                 </p>
+                                <p className="text-[11px] uppercase tracking-wide text-white/30">VP</p>
+                                <p className="text-xs font-semibold text-rose-300/70">
+                                  {currency(item.vpCash)}
+                                </p>
                               </div>
                               <Button
                                 variant="outline"
@@ -1576,7 +1581,7 @@ export default function Page() {
                                 className="rounded-xl border-rose-500/15 bg-rose-500/[0.04] text-white/50 hover:bg-rose-500/10"
                                 onClick={() => openEditCampaign(item)}
                               >
-                                <Pencil className="h-4 w-4" />
+                                <Eye className="h-4 w-4" />
                               </Button>
                             </div>
                           </CardContent>
