@@ -644,6 +644,7 @@ export default function LuzuPage() {
       gral: { ars: 0, usd: 0 },
       aqn: { ars: 0, usd: 0 },
       ndn: { ars: 0, usd: 0 },
+      otros: { ars: 0, usd: 0 },
       aCobrarAqn: { ars: 0, usd: 0 },
       aCobrarNdn: { ars: 0, usd: 0 },
     };
@@ -655,7 +656,8 @@ export default function LuzuPage() {
 
         acc.gral[key] += monto;
         if (ev.programa === "AQN") acc.aqn[key] += monto;
-        if (ev.programa === "NDN") acc.ndn[key] += monto;
+        else if (ev.programa === "NDN") acc.ndn[key] += monto;
+        else acc.otros[key] += monto;
 
         if (!ev.cobrado) {
           if (ev.programa === "AQN") acc.aCobrarAqn[key] += monto;
@@ -704,7 +706,8 @@ export default function LuzuPage() {
               <Link href="/" className="mb-1 inline-block text-xs text-white/30 hover:text-white/60">
                 ← Volver
               </Link>
-              <h1 className="text-2xl font-bold tracking-tight text-white md:text-3xl">LUZU</h1>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/luzu-logo.png" alt="Luzu TV" className="h-8 w-auto md:h-10" />
             </div>
 
             <Dialog open={open} onOpenChange={setOpen}>
@@ -983,6 +986,15 @@ export default function LuzuPage() {
                 {totals.ndn.usd > 0 && <p style={{marginTop:2, fontSize:12, fontWeight:600, color:"#f0abfc"}}>{currencyUSD(totals.ndn.usd)}</p>}
               </div>
             </div>
+
+            {/* Total Otros — solo si hay eventos con programa distinto a AQN/NDN */}
+            {(totals.otros.ars > 0 || totals.otros.usd > 0) && (
+              <div style={{borderRadius:20, border:"1px solid rgba(148,163,184,0.25)", background:"rgba(148,163,184,0.1)", padding:16}}>
+                <p style={{fontSize:12, fontWeight:500, color:"rgba(203,213,225,0.7)"}}>Total Otros</p>
+                <p style={{marginTop:4, fontSize:22, fontWeight:700, color:"#cbd5e1"}}>{currencyARS(totals.otros.ars)}</p>
+                {totals.otros.usd > 0 && <p style={{marginTop:2, fontSize:12, fontWeight:600, color:"#e2e8f0"}}>{currencyUSD(totals.otros.usd)}</p>}
+              </div>
+            )}
 
             {/* A cobrar AQN + A cobrar NDN */}
             <div style={{display:"grid", gridTemplateColumns:"1fr 1fr", gap:12}}>
