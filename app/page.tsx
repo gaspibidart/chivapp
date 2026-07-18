@@ -18,6 +18,8 @@ import { Switch } from "../components/ui/switch";
 import {
   BarChart3,
   CalendarDays,
+  ChevronDown,
+  ChevronUp,
   CircleDollarSign,
   Download,
   FileCheck,
@@ -168,6 +170,52 @@ function createContenidoState(
   }, {} as ContenidoState);
 }
 
+// Devuelve true si ningún item está tildado (estado "vacío").
+function isEmptyContenidoState(state: ContenidoState): boolean {
+  return !CONTENT_OPTIONS.some((option) => state[option.key]?.checked);
+}
+
+// FIX: campañas creadas antes de que se empezara a guardar contenidoItems
+// solo tienen el texto ya armado (ej: "3 Reels + Pauta"), no el detalle
+// tildable. Esta función reconstruye el detalle a partir de ese texto,
+// para que el popup de edición no aparezca vacío en campañas viejas.
+function parseContenidoText(text: string): ContenidoState {
+  const state = createContenidoState();
+  if (!text || text === "-") return state;
+
+  const parts = text.split("+").map((p) => p.trim()).filter(Boolean);
+
+  for (const part of parts) {
+    for (const option of CONTENT_OPTIONS) {
+      if (option.type === "check") {
+        if (part.toLowerCase() === option.label.toLowerCase()) {
+          state[option.key] = { checked: true, qty: 1 };
+          break;
+        }
+      } else if (option.type === "days") {
+        const match = part.match(
+          new RegExp(`^${option.label}\\s+(\\d+)\\s*d[ií]as?$`, "i")
+        );
+        if (match) {
+          state[option.key] = { checked: true, qty: Number(match[1]) || 1 };
+          break;
+        }
+      } else {
+        // type === "qty" → puede venir en singular ("1 Reel") o plural ("3 Reels")
+        const match = part.match(
+          new RegExp(`^(\\d+)\\s+(?:${option.label}|${option.plural})$`, "i")
+        );
+        if (match) {
+          state[option.key] = { checked: true, qty: Number(match[1]) || 1 };
+          break;
+        }
+      }
+    }
+  }
+
+  return state;
+}
+
 // FIX: parseMonth devolvía NaN para fechas vacías/inválidas.
 // Ahora devuelve -1 en esos casos para que los filtros no se rompan.
 function parseMonth(dateString: string): number {
@@ -212,18 +260,24 @@ function normalizeCampaigns(data: RawCampaignRow[]): Campaign[] {
     marca: item.marca || "",
     campana: item.campana || "-",
     // FIX: se intenta parsear contenidoItems desde la API si viene como string JSON.
-    // Si no viene o falla, se crea un estado vacío.
+    // Si no viene, falla, o viene vacío (campaña vieja sin este campo guardado),
+    // se reconstruye a partir del texto "contenido" como respaldo.
     contenidoItems: (() => {
-      try {
-        if (typeof item === "object" && "contenidoItems" in item) {
-          const raw = (item as { contenidoItems?: unknown }).contenidoItems;
-          if (typeof raw === "string") return createContenidoState(JSON.parse(raw));
-          if (typeof raw === "object" && raw !== null) return createContenidoState(raw as Record<string, Partial<ContenidoItem>>);
+      const parsed = (() => {
+        try {
+          if (typeof item === "object" && "contenidoItems" in item) {
+            const raw = (item as { contenidoItems?: unknown }).contenidoItems;
+            if (typeof raw === "string" && raw.trim()) return createContenidoState(JSON.parse(raw));
+            if (typeof raw === "object" && raw !== null) return createContenidoState(raw as Record<string, Partial<ContenidoItem>>);
+          }
+        } catch {
+          // si falla el parse, seguimos al respaldo de texto
         }
-      } catch {
-        // si falla el parse, usamos estado vacío
-      }
-      return createContenidoState();
+        return null;
+      })();
+
+      if (parsed && !isEmptyContenidoState(parsed)) return parsed;
+      return parseContenidoText(item.contenido || "");
     })(),
     contenido: item.contenido || "-",
     publicacion: normalizeDateInput(item.publicacion || ""),
@@ -481,7 +535,7 @@ function useCampaigns() {
 function StatusBadge({ item }: { item: Campaign }) {
   if (item.pagadoVane)
     return (
-      <Badge className="rounded-full border-0 bg-violet-500 px-3 py-1 text-white hover:bg-violet-500">
+      <Badge className="rounded-full border-0 bg-rose-500/80 px-3 py-1 text-white hover:bg-rose-500/80">
         Finalizada
       </Badge>
     );
@@ -793,6 +847,8 @@ export default function Page() {
   const [search, setSearch] = useState("");
   const [monthFilter, setMonthFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
+  // Colapsada por defecto para que la lista no se haga eterna.
+  const [showFinalized, setShowFinalized] = useState(false);
   const [open, setOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [form, setForm] = useState<FormState>(emptyForm);
@@ -1452,7 +1508,12 @@ export default function Page() {
                             </div>
                           </div>
                           <div className="flex items-center justify-between rounded-xl border border-white/10 bg-white/5 px-3 py-2">
-                            <span className="text-xs text-white/50">Pagado a Vane</span>
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs text-white/50">Pagado a Vane</span>
+                              <span className="text-xs font-semibold text-white/70">
+                                VP: {currency(item.vpCash)}
+                              </span>
+                            </div>
                             <Switch
                               checked={item.pagadoVane}
                               onCheckedChange={() => togglePagadoVane(item.id)}
@@ -1468,51 +1529,64 @@ export default function Page() {
               </div>
 
               <div className="pt-2">
-                <div className="mb-3 flex items-center gap-3">
-                  <div className="h-px flex-1 bg-slate-200" />
-                  <p className="text-sm font-semibold uppercase tracking-wide text-white/30">
+                <button
+                  onClick={() => setShowFinalized((v) => !v)}
+                  className="mb-3 flex w-full items-center gap-3"
+                >
+                  <div className="h-px flex-1 bg-rose-500/20" />
+                  <p className="flex items-center gap-1.5 text-sm font-semibold uppercase tracking-wide text-rose-400/70">
                     Finalizadas (pagado a Vane)
+                    <span className="rounded-full bg-rose-500/10 px-2 py-0.5 text-[11px] font-bold text-rose-400/80">
+                      {finalizedCampaigns.length}
+                    </span>
+                    {showFinalized ? (
+                      <ChevronUp className="h-3.5 w-3.5" />
+                    ) : (
+                      <ChevronDown className="h-3.5 w-3.5" />
+                    )}
                   </p>
-                  <div className="h-px flex-1 bg-slate-200" />
-                </div>
+                  <div className="h-px flex-1 bg-rose-500/20" />
+                </button>
 
-                <div className="space-y-3">
-                  {finalizedCampaigns.length ? (
-                    finalizedCampaigns.map((item) => (
-                      <Card
-                        key={item.id}
-                        className="rounded-[20px] border border-white/10 bg-white/5"
-                      >
-                        <CardContent className="flex items-center justify-between gap-3 p-4">
-                          <div className="min-w-0">
-                            <p className="truncate text-sm font-semibold text-white">
-                              {item.marca}
-                            </p>
-                            <p className="truncate text-xs text-white/40">{item.contenido}</p>
-                          </div>
-                          <div className="flex items-center gap-3">
-                            <div className="text-right">
-                              <p className="text-[11px] uppercase tracking-wide text-white/40">YO</p>
-                              <p className="text-sm font-bold text-emerald-400">
-                                {currency(item.yoCash)}
+                {showFinalized && (
+                  <div className="space-y-3">
+                    {finalizedCampaigns.length ? (
+                      finalizedCampaigns.map((item) => (
+                        <Card
+                          key={item.id}
+                          className="rounded-[20px] border border-rose-500/15 bg-rose-500/[0.04]"
+                        >
+                          <CardContent className="flex items-center justify-between gap-3 p-4">
+                            <div className="min-w-0">
+                              <p className="truncate text-sm font-semibold text-white/80">
+                                {item.marca}
                               </p>
+                              <p className="truncate text-xs text-white/30">{item.contenido}</p>
                             </div>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="rounded-xl border-white/10 bg-white/5 text-white/60 hover:bg-white/10"
-                              onClick={() => openEditCampaign(item)}
-                            >
-                              <Pencil className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))
-                  ) : (
-                    <p className="text-sm text-slate-500">Todavía no hay campañas finalizadas.</p>
-                  )}
-                </div>
+                            <div className="flex items-center gap-3">
+                              <div className="text-right">
+                                <p className="text-[11px] uppercase tracking-wide text-white/30">YO</p>
+                                <p className="text-sm font-bold text-emerald-400/70">
+                                  {currency(item.yoCash)}
+                                </p>
+                              </div>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="rounded-xl border-rose-500/15 bg-rose-500/[0.04] text-white/50 hover:bg-rose-500/10"
+                                onClick={() => openEditCampaign(item)}
+                              >
+                                <Pencil className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))
+                    ) : (
+                      <p className="text-sm text-slate-500">Todavía no hay campañas finalizadas.</p>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           </div>}
