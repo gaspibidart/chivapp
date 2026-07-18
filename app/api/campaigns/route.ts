@@ -10,6 +10,7 @@ type CampaignBody = {
   marca?: string;
   campana?: string;
   contenido?: string;
+  contenidoItems?: unknown;
   publicacion?: string;
   pagoA?: string | number;
   cobro?: string;
@@ -20,18 +21,32 @@ type CampaignBody = {
   ivaVane?: string | number;
   yoMasIva?: string | number;
   facturaEnviada?: boolean | string;
+  facturaFecha?: string;
   cobrado?: boolean | string;
+  pagadoVane?: boolean | string;
 };
 
 // ─── Helper: construye URL de Apps Script para crear/editar ──────────────────
 
 function buildCampaignUrl(action: "create" | "update", body: CampaignBody): string {
+  // FIX: contenidoItems no se estaba mandando a Apps Script, por eso el popup
+  // de edición aparecía siempre vacío (todo destildado en 1). Se manda como
+  // JSON string y se guarda tal cual en una columna de la Sheet.
+  const contenidoItemsJson = (() => {
+    try {
+      return JSON.stringify(body.contenidoItems ?? {});
+    } catch {
+      return "{}";
+    }
+  })();
+
   return (
     `${APPS_SCRIPT_URL}?action=${action}` +
     `&id=${encodeURIComponent(String(body.id ?? ""))}` +
     `&marca=${encodeURIComponent(String(body.marca ?? ""))}` +
     `&campana=${encodeURIComponent(String(body.campana ?? ""))}` +
     `&contenido=${encodeURIComponent(String(body.contenido ?? ""))}` +
+    `&contenidoItems=${encodeURIComponent(contenidoItemsJson)}` +
     `&publicacion=${encodeURIComponent(String(body.publicacion ?? ""))}` +
     `&pagoA=${encodeURIComponent(String(body.pagoA ?? ""))}` +
     `&cobro=${encodeURIComponent(String(body.cobro ?? ""))}` +
@@ -42,7 +57,9 @@ function buildCampaignUrl(action: "create" | "update", body: CampaignBody): stri
     `&ivaVane=${encodeURIComponent(String(body.ivaVane ?? ""))}` +
     `&yoMasIva=${encodeURIComponent(String(body.yoMasIva ?? ""))}` +
     `&facturaEnviada=${encodeURIComponent(String(body.facturaEnviada ?? false))}` +
-    `&cobrado=${encodeURIComponent(String(body.cobrado ?? false))}`
+    `&facturaFecha=${encodeURIComponent(String(body.facturaFecha ?? ""))}` +
+    `&cobrado=${encodeURIComponent(String(body.cobrado ?? false))}` +
+    `&pagadoVane=${encodeURIComponent(String(body.pagadoVane ?? false))}`
   );
 }
 

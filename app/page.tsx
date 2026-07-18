@@ -63,7 +63,9 @@ type Campaign = {
   ivaVane: number;
   yoMasIva: number;
   facturaEnviada: boolean;
+  facturaFecha: string;
   cobrado: boolean;
+  pagadoVane: boolean;
 };
 
 // Tipo que representa exactamente lo que devuelve la API (antes de normalizar)
@@ -72,6 +74,7 @@ type RawCampaignRow = {
   marca?: string;
   campana?: string;
   contenido?: string;
+  contenidoItems?: unknown;
   publicacion?: string;
   pagoA?: string | number;
   cobro?: string;
@@ -82,7 +85,9 @@ type RawCampaignRow = {
   ivaVane?: string | number;
   yoMasIva?: string | number;
   facturaEnviada?: boolean | string;
+  facturaFecha?: string;
   cobrado?: boolean | string;
+  pagadoVane?: boolean | string;
 };
 
 type FormState = {
@@ -95,7 +100,9 @@ type FormState = {
   fee: string;
   tipoCobro: "cash" | "transferencia";
   facturaEnviada: boolean;
+  facturaFecha: string;
   cobrado: boolean;
+  pagadoVane: boolean;
 };
 
 // ─── Constantes ───────────────────────────────────────────────────────────────
@@ -126,7 +133,9 @@ const emptyForm: FormState = {
   fee: "",
   tipoCobro: "cash",
   facturaEnviada: false,
+  facturaFecha: "",
   cobrado: false,
+  pagadoVane: false,
 };
 
 // ─── Helpers puros ────────────────────────────────────────────────────────────
@@ -230,9 +239,13 @@ function normalizeCampaigns(data: RawCampaignRow[]): Campaign[] {
     facturaEnviada:
       String(item.facturaEnviada).toLowerCase() === "true" ||
       item.facturaEnviada === true,
+    facturaFecha: normalizeDateInput(item.facturaFecha || ""),
     cobrado:
       String(item.cobrado).toLowerCase() === "true" ||
       item.cobrado === true,
+    pagadoVane:
+      String(item.pagadoVane).toLowerCase() === "true" ||
+      item.pagadoVane === true,
   }));
 }
 
@@ -280,7 +293,14 @@ function useCampaigns() {
   const toggleFactura = useCallback((id: number) => {
     setCampaigns((prev) => {
       const updated = prev.map((c) =>
-        c.id === id ? { ...c, facturaEnviada: !c.facturaEnviada } : c
+        c.id === id
+          ? {
+              ...c,
+              facturaEnviada: !c.facturaEnviada,
+              // Si se destilda, se borra la fecha para no dejar basura.
+              facturaFecha: !c.facturaEnviada ? c.facturaFecha : "",
+            }
+          : c
       );
       const campaign = updated.find((c) => c.id === id);
       if (campaign) persistCampaign(campaign);
@@ -291,7 +311,33 @@ function useCampaigns() {
   const toggleCobrado = useCallback((id: number) => {
     setCampaigns((prev) => {
       const updated = prev.map((c) =>
-        c.id === id ? { ...c, cobrado: !c.cobrado } : c
+        // Si se destilda "Cobrado", se destilda también "Pagado Vane":
+        // no puede estar pagado a Vane algo que no se cobró.
+        c.id === id
+          ? { ...c, cobrado: !c.cobrado, pagadoVane: !c.cobrado ? c.pagadoVane : false }
+          : c
+      );
+      const campaign = updated.find((c) => c.id === id);
+      if (campaign) persistCampaign(campaign);
+      return updated;
+    });
+  }, [persistCampaign]);
+
+  const togglePagadoVane = useCallback((id: number) => {
+    setCampaigns((prev) => {
+      const updated = prev.map((c) =>
+        c.id === id ? { ...c, pagadoVane: !c.pagadoVane } : c
+      );
+      const campaign = updated.find((c) => c.id === id);
+      if (campaign) persistCampaign(campaign);
+      return updated;
+    });
+  }, [persistCampaign]);
+
+  const setFacturaFecha = useCallback((id: number, fecha: string) => {
+    setCampaigns((prev) => {
+      const updated = prev.map((c) =>
+        c.id === id ? { ...c, facturaFecha: fecha, facturaEnviada: true } : c
       );
       const campaign = updated.find((c) => c.id === id);
       if (campaign) persistCampaign(campaign);
@@ -357,7 +403,10 @@ function useCampaigns() {
       ivaVane: 0,
       yoMasIva: 0,
       facturaEnviada: form.facturaEnviada,
+      facturaFecha: form.facturaEnviada ? normalizeDateInput(form.facturaFecha) : "",
       cobrado: form.cobrado,
+      // No puede quedar finalizada (pagado a Vane) si no está cobrada.
+      pagadoVane: form.cobrado ? form.pagadoVane : false,
     };
 
     try {
@@ -418,6 +467,8 @@ function useCampaigns() {
     isSaving,
     toggleFactura,
     toggleCobrado,
+    togglePagadoVane,
+    setFacturaFecha,
     deleteCampaign,
     saveCampaign,
     exportData,
@@ -428,6 +479,12 @@ function useCampaigns() {
 // ─── Componentes auxiliares ───────────────────────────────────────────────────
 
 function StatusBadge({ item }: { item: Campaign }) {
+  if (item.pagadoVane)
+    return (
+      <Badge className="rounded-full border-0 bg-violet-500 px-3 py-1 text-white hover:bg-violet-500">
+        Finalizada
+      </Badge>
+    );
   if (item.cobrado)
     return (
       <Badge className="rounded-full border-0 bg-emerald-500 px-3 py-1 text-white hover:bg-emerald-500">
@@ -725,6 +782,8 @@ export default function Page() {
     isSaving,
     toggleFactura,
     toggleCobrado,
+    togglePagadoVane,
+    setFacturaFecha,
     deleteCampaign,
     saveCampaign,
     exportData,
@@ -779,8 +838,10 @@ export default function Page() {
       const statusOk =
         statusFilter === "all"
           ? true
+          : statusFilter === "pagadovane"
+          ? c.pagadoVane
           : statusFilter === "cobrado"
-          ? c.cobrado
+          ? c.cobrado && !c.pagadoVane
           : statusFilter === "facturado"
           ? c.facturaEnviada && !c.cobrado
           : !c.facturaEnviada && !c.cobrado;
@@ -803,9 +864,17 @@ export default function Page() {
       });
   }, [filteredCampaigns]);
 
+  // Cobradas pero todavía sin pagarle a Vane.
   const paidCampaigns = useMemo(() => {
     return [...filteredCampaigns]
-      .filter((c) => c.cobrado)
+      .filter((c) => c.cobrado && !c.pagadoVane)
+      .sort((a, b) => new Date(a.cobro).getTime() - new Date(b.cobro).getTime());
+  }, [filteredCampaigns]);
+
+  // Cobradas Y ya pagadas a Vane: la campaña está 100% finalizada.
+  const finalizedCampaigns = useMemo(() => {
+    return [...filteredCampaigns]
+      .filter((c) => c.cobrado && c.pagadoVane)
       .sort((a, b) => new Date(a.cobro).getTime() - new Date(b.cobro).getTime());
   }, [filteredCampaigns]);
 
@@ -859,7 +928,9 @@ export default function Page() {
       fee: String(campaign.fee),
       tipoCobro: campaign.tipoCobro || "cash",
       facturaEnviada: campaign.facturaEnviada,
+      facturaFecha: campaign.facturaFecha || "",
       cobrado: campaign.cobrado,
+      pagadoVane: campaign.pagadoVane,
     });
     setOpen(true);
   };
@@ -1044,24 +1115,62 @@ export default function Page() {
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                    <span className="text-sm text-slate-700">Factura enviada</span>
-                    <Switch
-                      checked={form.facturaEnviada}
-                      onCheckedChange={(checked) =>
-                        setForm({ ...form, facturaEnviada: Boolean(checked) })
-                      }
-                    />
+                  <div className="space-y-3 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-sm text-slate-700">Factura enviada</span>
+                      <Switch
+                        checked={form.facturaEnviada}
+                        onCheckedChange={(checked) => {
+                          const isChecked = Boolean(checked);
+                          setForm({
+                            ...form,
+                            facturaEnviada: isChecked,
+                            // Si se destilda, se borra la fecha para no dejar basura.
+                            facturaFecha: isChecked ? form.facturaFecha : "",
+                          });
+                        }}
+                      />
+                    </div>
+                    {form.facturaEnviada && (
+                      <div className="space-y-1">
+                        <p className="text-xs font-medium text-slate-500">Fecha de envío</p>
+                        <Input
+                          type="date"
+                          value={form.facturaFecha}
+                          onChange={(e) => setForm({ ...form, facturaFecha: e.target.value })}
+                          className="rounded-2xl border-slate-200 bg-white"
+                        />
+                      </div>
+                    )}
                   </div>
 
-                  <div className="flex items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4 md:col-span-2">
-                    <span className="text-sm text-slate-700">Cobrado</span>
-                    <Switch
-                      checked={form.cobrado}
-                      onCheckedChange={(checked) =>
-                        setForm({ ...form, cobrado: Boolean(checked) })
-                      }
-                    />
+                  <div className="space-y-3 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-sm text-slate-700">Cobrado</span>
+                      <Switch
+                        checked={form.cobrado}
+                        onCheckedChange={(checked) => {
+                          const isChecked = Boolean(checked);
+                          setForm({
+                            ...form,
+                            cobrado: isChecked,
+                            // Si se destilda "Cobrado", no puede seguir "Pagado Vane".
+                            pagadoVane: isChecked ? form.pagadoVane : false,
+                          });
+                        }}
+                      />
+                    </div>
+                    {form.cobrado && (
+                      <div className="flex items-center justify-between gap-3 border-t border-slate-200 pt-3">
+                        <span className="text-sm text-slate-700">Pagado a Vane</span>
+                        <Switch
+                          checked={form.pagadoVane}
+                          onCheckedChange={(checked) =>
+                            setForm({ ...form, pagadoVane: Boolean(checked) })
+                          }
+                        />
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -1221,6 +1330,7 @@ export default function Page() {
                 className="h-10 flex-1 rounded-2xl border border-white/10 bg-[#0a0a0f] px-3 text-[16px] text-white/70 md:w-[140px] md:flex-none"
               >
                 <option value="all">Todos</option>
+                <option value="pagadovane">Finalizada (Pagado Vane)</option>
                 <option value="cobrado">Cobrado</option>
                 <option value="facturado">Facturado</option>
                 <option value="pendiente">Pendiente</option>
@@ -1282,6 +1392,19 @@ export default function Page() {
                           <Switch checked={item.cobrado} onCheckedChange={() => toggleCobrado(item.id)} />
                         </div>
                       </div>
+
+                      {/* Fecha de envío de factura: solo visible si "Factura" está tildado */}
+                      {item.facturaEnviada && (
+                        <div className="flex items-center justify-between gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2">
+                          <span className="text-xs text-white/50 shrink-0">Fecha de envío</span>
+                          <input
+                            type="date"
+                            value={item.facturaFecha}
+                            onChange={(e) => setFacturaFecha(item.id, e.target.value)}
+                            className="h-7 rounded-lg border border-white/10 bg-[#0a0a0f] px-2 text-[13px] text-white/80 outline-none"
+                          />
+                        </div>
+                      )}
                     </CardContent>
                   </Card>
                 ))}
@@ -1299,6 +1422,63 @@ export default function Page() {
                 <div className="space-y-3">
                   {paidCampaigns.length ? (
                     paidCampaigns.map((item) => (
+                      <Card
+                        key={item.id}
+                        className="rounded-[20px] border border-white/10 bg-white/5"
+                      >
+                        <CardContent className="space-y-3 p-4">
+                          <div className="flex items-center justify-between gap-3">
+                            <div className="min-w-0">
+                              <p className="truncate text-sm font-semibold text-white">
+                                {item.marca}
+                              </p>
+                              <p className="truncate text-xs text-white/40">{item.contenido}</p>
+                            </div>
+                            <div className="flex items-center gap-3">
+                              <div className="text-right">
+                                <p className="text-[11px] uppercase tracking-wide text-white/40">YO</p>
+                                <p className="text-sm font-bold text-emerald-400">
+                                  {currency(item.yoCash)}
+                                </p>
+                              </div>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="rounded-xl border-white/10 bg-white/5 text-white/60 hover:bg-white/10"
+                                onClick={() => openEditCampaign(item)}
+                              >
+                                <Pencil className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </div>
+                          <div className="flex items-center justify-between rounded-xl border border-white/10 bg-white/5 px-3 py-2">
+                            <span className="text-xs text-white/50">Pagado a Vane</span>
+                            <Switch
+                              checked={item.pagadoVane}
+                              onCheckedChange={() => togglePagadoVane(item.id)}
+                            />
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))
+                  ) : (
+                    <p className="text-sm text-slate-500">Todavía no hay campañas cobradas pendientes de pagarle a Vane.</p>
+                  )}
+                </div>
+              </div>
+
+              <div className="pt-2">
+                <div className="mb-3 flex items-center gap-3">
+                  <div className="h-px flex-1 bg-slate-200" />
+                  <p className="text-sm font-semibold uppercase tracking-wide text-white/30">
+                    Finalizadas (pagado a Vane)
+                  </p>
+                  <div className="h-px flex-1 bg-slate-200" />
+                </div>
+
+                <div className="space-y-3">
+                  {finalizedCampaigns.length ? (
+                    finalizedCampaigns.map((item) => (
                       <Card
                         key={item.id}
                         className="rounded-[20px] border border-white/10 bg-white/5"
@@ -1330,7 +1510,7 @@ export default function Page() {
                       </Card>
                     ))
                   ) : (
-                    <p className="text-sm text-slate-500">Todavía no hay campañas cobradas.</p>
+                    <p className="text-sm text-slate-500">Todavía no hay campañas finalizadas.</p>
                   )}
                 </div>
               </div>
