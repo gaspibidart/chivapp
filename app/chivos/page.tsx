@@ -1370,7 +1370,10 @@ export default function Page() {
             <p className="text-sm font-bold tracking-widest text-emerald-100 uppercase">Total Actual</p>
             <p className="mt-1 text-4xl font-bold tracking-tight text-white">{currency(totals.totalCobrado.ars)}</p>
             {totals.totalCobrado.usd > 0 && (
-              <p className="mt-1 text-xl font-semibold text-emerald-100">{currencyUSD(totals.totalCobrado.usd)}</p>
+              <>
+                <div style={{height:1, background:"rgba(255,255,255,0.35)", margin:"10px 0"}} />
+                <p className="text-4xl font-bold tracking-tight text-white">{currencyUSD(totals.totalCobrado.usd)}</p>
+              </>
             )}
             <p className="mt-1 text-xs text-emerald-200 uppercase tracking-widest">Ganado hasta ahora</p>
           </div>
@@ -1381,7 +1384,10 @@ export default function Page() {
               <p style={{fontSize:12, fontWeight:500, color:"rgba(253,186,116,0.7)"}}>Pendiente de cobro</p>
               <p style={{marginTop:4, fontSize:22, fontWeight:700, color:"#fb923c"}}>{currency(totals.totalPendiente.ars)}</p>
               {totals.totalPendiente.usd > 0 && (
-                <p style={{marginTop:2, fontSize:13, fontWeight:600, color:"#fdba74"}}>{currencyUSD(totals.totalPendiente.usd)}</p>
+                <>
+                  <div style={{height:1, background:"rgba(249,115,22,0.35)", margin:"8px 0"}} />
+                  <p style={{fontSize:22, fontWeight:700, color:"#fb923c"}}>{currencyUSD(totals.totalPendiente.usd)}</p>
+                </>
               )}
               <div style={{marginTop:8, display:"flex", flexWrap:"wrap", gap:4}}>
                 {campaigns.filter((c) => !c.cobrado).sort((a, b) => new Date(a.cobro).getTime() - new Date(b.cobro).getTime()).map((c) => (
@@ -1396,7 +1402,10 @@ export default function Page() {
               <p style={{fontSize:12, fontWeight:500, color:"rgba(255,255,255,0.45)"}}>Total campañas</p>
               <p style={{marginTop:4, fontSize:22, fontWeight:700, color:"rgba(255,255,255,0.9)"}}>{currency(totals.totalYo.ars)}</p>
               {totals.totalYo.usd > 0 && (
-                <p style={{marginTop:2, fontSize:13, fontWeight:600, color:"rgba(255,255,255,0.6)"}}>{currencyUSD(totals.totalYo.usd)}</p>
+                <>
+                  <div style={{height:1, background:"rgba(255,255,255,0.15)", margin:"8px 0"}} />
+                  <p style={{fontSize:22, fontWeight:700, color:"rgba(255,255,255,0.9)"}}>{currencyUSD(totals.totalYo.usd)}</p>
+                </>
               )}
               <p style={{marginTop:6, fontSize:10, color:"rgba(255,255,255,0.25)"}}>Suma de todas</p>
             </div>

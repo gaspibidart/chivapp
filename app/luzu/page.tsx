@@ -1029,7 +1029,10 @@ export default function LuzuPage() {
               <p className="text-sm font-bold tracking-widest text-sky-100 uppercase">Total general</p>
               <p className="mt-1 text-4xl font-bold tracking-tight text-white">{currencyARS(totals.gral.ars)}</p>
               {totals.gral.usd > 0 && (
-                <p className="mt-1 text-lg font-semibold text-sky-100">{currencyUSD(totals.gral.usd)}</p>
+                <>
+                  <div style={{height:1, background:"rgba(255,255,255,0.35)", margin:"10px 0"}} />
+                  <p className="text-4xl font-bold tracking-tight text-white">{currencyUSD(totals.gral.usd)}</p>
+                </>
               )}
             </div>
 
@@ -1038,12 +1041,22 @@ export default function LuzuPage() {
               <div style={{borderRadius:20, border:"1px solid rgba(14,165,233,0.25)", background:"rgba(14,165,233,0.1)", padding:16}}>
                 <p style={{fontSize:12, fontWeight:500, color:"rgba(125,211,252,0.7)"}}>Total AQN</p>
                 <p style={{marginTop:4, fontSize:22, fontWeight:700, color:"#38bdf8"}}>{currencyARS(totals.aqn.ars)}</p>
-                {totals.aqn.usd > 0 && <p style={{marginTop:2, fontSize:12, fontWeight:600, color:"#7dd3fc"}}>{currencyUSD(totals.aqn.usd)}</p>}
+                {totals.aqn.usd > 0 && (
+                  <>
+                    <div style={{height:1, background:"rgba(14,165,233,0.35)", margin:"8px 0"}} />
+                    <p style={{fontSize:22, fontWeight:700, color:"#38bdf8"}}>{currencyUSD(totals.aqn.usd)}</p>
+                  </>
+                )}
               </div>
               <div style={{borderRadius:20, border:"1px solid rgba(217,70,239,0.25)", background:"rgba(217,70,239,0.1)", padding:16}}>
                 <p style={{fontSize:12, fontWeight:500, color:"rgba(240,171,252,0.7)"}}>Total NDN</p>
                 <p style={{marginTop:4, fontSize:22, fontWeight:700, color:"#e879f9"}}>{currencyARS(totals.ndn.ars)}</p>
-                {totals.ndn.usd > 0 && <p style={{marginTop:2, fontSize:12, fontWeight:600, color:"#f0abfc"}}>{currencyUSD(totals.ndn.usd)}</p>}
+                {totals.ndn.usd > 0 && (
+                  <>
+                    <div style={{height:1, background:"rgba(217,70,239,0.35)", margin:"8px 0"}} />
+                    <p style={{fontSize:22, fontWeight:700, color:"#e879f9"}}>{currencyUSD(totals.ndn.usd)}</p>
+                  </>
+                )}
               </div>
             </div>
 
@@ -1052,7 +1065,12 @@ export default function LuzuPage() {
               <div style={{borderRadius:20, border:"1px solid rgba(148,163,184,0.25)", background:"rgba(148,163,184,0.1)", padding:16}}>
                 <p style={{fontSize:12, fontWeight:500, color:"rgba(203,213,225,0.7)"}}>Total Otros</p>
                 <p style={{marginTop:4, fontSize:22, fontWeight:700, color:"#cbd5e1"}}>{currencyARS(totals.otros.ars)}</p>
-                {totals.otros.usd > 0 && <p style={{marginTop:2, fontSize:12, fontWeight:600, color:"#e2e8f0"}}>{currencyUSD(totals.otros.usd)}</p>}
+                {totals.otros.usd > 0 && (
+                  <>
+                    <div style={{height:1, background:"rgba(148,163,184,0.35)", margin:"8px 0"}} />
+                    <p style={{fontSize:22, fontWeight:700, color:"#cbd5e1"}}>{currencyUSD(totals.otros.usd)}</p>
+                  </>
+                )}
               </div>
             )}
 
@@ -1061,12 +1079,22 @@ export default function LuzuPage() {
               <div style={{borderRadius:20, border:"1px solid rgba(249,115,22,0.25)", background:"rgba(249,115,22,0.1)", padding:16}}>
                 <p style={{fontSize:12, fontWeight:500, color:"rgba(253,186,116,0.7)"}}>A cobrar AQN</p>
                 <p style={{marginTop:4, fontSize:22, fontWeight:700, color:"#fb923c"}}>{currencyARS(totals.aCobrarAqn.ars)}</p>
-                {totals.aCobrarAqn.usd > 0 && <p style={{marginTop:2, fontSize:12, fontWeight:600, color:"#fdba74"}}>{currencyUSD(totals.aCobrarAqn.usd)}</p>}
+                {totals.aCobrarAqn.usd > 0 && (
+                  <>
+                    <div style={{height:1, background:"rgba(249,115,22,0.35)", margin:"8px 0"}} />
+                    <p style={{fontSize:22, fontWeight:700, color:"#fb923c"}}>{currencyUSD(totals.aCobrarAqn.usd)}</p>
+                  </>
+                )}
               </div>
               <div style={{borderRadius:20, border:"1px solid rgba(249,115,22,0.25)", background:"rgba(249,115,22,0.1)", padding:16}}>
                 <p style={{fontSize:12, fontWeight:500, color:"rgba(253,186,116,0.7)"}}>A cobrar NDN</p>
                 <p style={{marginTop:4, fontSize:22, fontWeight:700, color:"#fb923c"}}>{currencyARS(totals.aCobrarNdn.ars)}</p>
-                {totals.aCobrarNdn.usd > 0 && <p style={{marginTop:2, fontSize:12, fontWeight:600, color:"#fdba74"}}>{currencyUSD(totals.aCobrarNdn.usd)}</p>}
+                {totals.aCobrarNdn.usd > 0 && (
+                  <>
+                    <div style={{height:1, background:"rgba(249,115,22,0.35)", margin:"8px 0"}} />
+                    <p style={{fontSize:22, fontWeight:700, color:"#fb923c"}}>{currencyUSD(totals.aCobrarNdn.usd)}</p>
+                  </>
+                )}
               </div>
             </div>
           </div>
