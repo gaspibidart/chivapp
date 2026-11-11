@@ -51,6 +51,8 @@ type ContenidoItem = {
 
 type ContenidoState = Record<string, ContenidoItem>;
 
+type Moneda = "$" | "USD";
+
 type Campaign = {
   id: number;
   marca: string;
@@ -61,6 +63,7 @@ type Campaign = {
   pagoA: number;
   cobro: string;
   fee: number;
+  moneda: Moneda;
   tipoCobro: "cash" | "transferencia";
   yoCash: number;
   vpCash: number;
@@ -83,6 +86,7 @@ type RawCampaignRow = {
   pagoA?: string | number;
   cobro?: string;
   fee?: string | number;
+  moneda?: string;
   tipoCobro?: string;
   yoCash?: string | number;
   vpCash?: string | number;
@@ -102,6 +106,7 @@ type FormState = {
   publicacion: string;
   pagoA: number;
   fee: string;
+  moneda: Moneda;
   tipoCobro: "cash" | "transferencia";
   facturaEnviada: boolean;
   facturaFecha: string;
@@ -135,6 +140,7 @@ const emptyForm: FormState = {
   publicacion: "",
   pagoA: 0,
   fee: "",
+  moneda: "$",
   tipoCobro: "cash",
   facturaEnviada: false,
   facturaFecha: "",
@@ -252,7 +258,30 @@ const currency = (value: number): string =>
     maximumFractionDigits: 0,
   }).format(value || 0);
 
+const currencyUSD = (value: number): string =>
+  `US$ ${new Intl.NumberFormat("es-AR", { maximumFractionDigits: 0 }).format(value || 0)}`;
+
+// Formatea un monto según la moneda de la campaña ($ o USD).
+const money = (value: number, moneda: Moneda): string =>
+  moneda === "USD" ? currencyUSD(value) : currency(value);
+
 const amountValue = (item: Campaign): number => item.yoCash;
+
+// Suma montos separando pesos y dólares, para nunca mezclar monedas.
+type MoneyTotals = { ars: number; usd: number };
+
+const sumByMoneda = (
+  items: Campaign[],
+  pick: (item: Campaign) => number = amountValue
+): MoneyTotals =>
+  items.reduce<MoneyTotals>(
+    (acc, item) => {
+      if (item.moneda === "USD") acc.usd += pick(item);
+      else acc.ars += pick(item);
+      return acc;
+    },
+    { ars: 0, usd: 0 }
+  );
 
 // FIX: normalización extraída a función reutilizable para evitar duplicación
 // entre loadCampaigns y refreshCampaigns.
@@ -286,6 +315,8 @@ function normalizeCampaigns(data: RawCampaignRow[]): Campaign[] {
     pagoA: Number(item.pagoA || 0),
     cobro: normalizeDateInput(item.cobro || ""),
     fee: Number(item.fee || 0),
+    // Las campañas viejas no tienen moneda guardada: se asumen en pesos.
+    moneda: item.moneda === "USD" ? ("USD" as const) : ("$" as const),
     tipoCobro:
       item.tipoCobro === "transferencia" ? "transferencia" : "cash",
     yoCash: Number(item.yoCash || 0),
@@ -453,6 +484,7 @@ function useCampaigns() {
       pagoA: Number(form.pagoA || 0),
       cobro: cobroDate.toISOString().slice(0, 10),
       fee,
+      moneda: form.moneda,
       tipoCobro: form.tipoCobro,
       yoCash,
       vpCash,
@@ -763,7 +795,7 @@ function CalendarioTab({ campaigns }: { campaigns: Campaign[] }) {
     <div className="space-y-2">
       {monthNames.map((month, index) => {
         const items = campaigns.filter((c) => parseMonth(c.cobro) === index).sort((a, b) => new Date(a.cobro).getTime() - new Date(b.cobro).getTime());
-        const total = items.reduce((acc, item) => acc + amountValue(item), 0);
+        const monthTotals = sumByMoneda(items);
         const isPast = index < currentMonth;
         const isOpen = expanded[index];
 
@@ -788,9 +820,14 @@ function CalendarioTab({ campaigns }: { campaigns: Campaign[] }) {
                 )}
               </div>
               <div className="flex items-center gap-3">
-                <span style={{fontSize:14, fontWeight:600, color: total > 0 ? "#34d399" : "rgba(255,255,255,0.2)"}}>
-                  {total > 0 ? currency(total) : "—"}
-                </span>
+                <div className="text-right">
+                  <span style={{fontSize:14, fontWeight:600, color: monthTotals.ars > 0 ? "#34d399" : "rgba(255,255,255,0.2)"}}>
+                    {monthTotals.ars > 0 ? currency(monthTotals.ars) : monthTotals.usd > 0 ? "" : "—"}
+                  </span>
+                  {monthTotals.usd > 0 && (
+                    <p style={{fontSize:monthTotals.ars > 0 ? 11 : 14, fontWeight:600, color:"#38bdf8"}}>{currencyUSD(monthTotals.usd)}</p>
+                  )}
+                </div>
                 <span style={{color:"rgba(255,255,255,0.3)", fontSize:12}}>{isOpen ? "▲" : "▼"}</span>
               </div>
             </button>
@@ -808,7 +845,7 @@ function CalendarioTab({ campaigns }: { campaigns: Campaign[] }) {
                           <p style={{fontSize:11, color:"rgba(255,255,255,0.3)", marginTop:1}}>{item.contenido}</p>
                         </div>
                         <div className="text-right shrink-0">
-                          <p style={{fontSize:15, fontWeight:700, color:"#34d399"}}>{currency(amountValue(item))}</p>
+                          <p style={{fontSize:15, fontWeight:700, color: item.moneda === "USD" ? "#38bdf8" : "#34d399"}}>{money(amountValue(item), item.moneda)}</p>
                           <p style={{fontSize:11, color:"rgba(255,255,255,0.3)"}}>{formatDateAR(item.cobro)}</p>
                         </div>
                       </div>
@@ -939,20 +976,19 @@ export default function Page() {
   const monthlyData = useMemo(() => {
     return monthNames.map((month, index) => {
       const items = campaigns.filter((c) => parseMonth(c.cobro) === index);
-      const total = items.reduce((acc, item) => acc + amountValue(item), 0);
-      return { month: month.slice(0, 3), total, items };
+      const sums = sumByMoneda(items);
+      return { month: month.slice(0, 3), total: sums.ars, totalUsd: sums.usd, items };
     });
   }, [campaigns]);
 
+  // Solo se muestra el gráfico en USD si hay al menos una campaña en dólares.
+  const hasUsd = useMemo(() => campaigns.some((c) => c.moneda === "USD"), [campaigns]);
+
   const totals = useMemo(() => {
-    const totalGeneral = campaigns.reduce((acc, c) => acc + c.fee, 0);
-    const totalYo = campaigns.reduce((acc, c) => acc + amountValue(c), 0);
-    const totalCobrado = campaigns
-      .filter((c) => c.cobrado)
-      .reduce((acc, c) => acc + amountValue(c), 0);
-    const totalPendiente = campaigns
-      .filter((c) => !c.cobrado)
-      .reduce((acc, c) => acc + amountValue(c), 0);
+    const totalGeneral = sumByMoneda(campaigns, (c) => c.fee);
+    const totalYo = sumByMoneda(campaigns);
+    const totalCobrado = sumByMoneda(campaigns.filter((c) => c.cobrado));
+    const totalPendiente = sumByMoneda(campaigns.filter((c) => !c.cobrado));
     const facturas = campaigns.filter((c) => c.facturaEnviada).length;
     return { totalGeneral, totalYo, totalCobrado, totalPendiente, facturas };
   }, [campaigns]);
@@ -984,6 +1020,7 @@ export default function Page() {
       publicacion: normalizeDateInput(campaign.publicacion),
       pagoA: campaign.pagoA,
       fee: String(campaign.fee),
+      moneda: campaign.moneda || "$",
       tipoCobro: campaign.tipoCobro || "cash",
       facturaEnviada: campaign.facturaEnviada,
       facturaFecha: campaign.facturaFecha || "",
@@ -1119,6 +1156,26 @@ export default function Page() {
                   </div>
 
                   <div className="space-y-2 md:col-span-2">
+                    <p className="text-sm font-medium text-slate-500">Moneda</p>
+                    <div className="grid grid-cols-2 gap-2">
+                      {(["$", "USD"] as const).map((m) => (
+                        <Button
+                          key={m}
+                          type="button"
+                          onClick={() => setForm({ ...form, moneda: m })}
+                          className={`rounded-2xl border px-4 py-2 transition ${
+                            form.moneda === m
+                              ? "!border-slate-900 !bg-slate-900 !text-white hover:!bg-slate-900"
+                              : "!border-slate-200 !bg-white !text-slate-900 hover:!bg-slate-50"
+                          }`}
+                        >
+                          {m === "$" ? "$ (ARS)" : "USD"}
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="space-y-2 md:col-span-2">
                     <p className="text-sm font-medium text-slate-500">Fee</p>
                     <Input
                       type="text"
@@ -1139,11 +1196,11 @@ export default function Page() {
                     <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-3">
                       <div>
                         <span className="text-slate-500">YO:</span>{" "}
-                        <span className="font-bold text-slate-900">{currency(previewYo)}</span>
+                        <span className="font-bold text-slate-900">{money(previewYo, form.moneda)}</span>
                       </div>
                       <div>
                         <span className="text-slate-500">VP:</span>{" "}
-                        <span className="font-bold text-slate-900">{currency(previewVp)}</span>
+                        <span className="font-bold text-slate-900">{money(previewVp, form.moneda)}</span>
                       </div>
                     </div>
                   </div>
@@ -1269,7 +1326,10 @@ export default function Page() {
           {/* Total Actual — campañas cobradas */}
           <div style={{background:"linear-gradient(135deg, #10b981, #0d9488)", borderRadius:24, padding:24, boxShadow:"0 8px 32px rgba(16,185,129,0.25)"}}>
             <p className="text-sm font-bold tracking-widest text-emerald-100 uppercase">Total Actual</p>
-            <p className="mt-1 text-4xl font-bold tracking-tight text-white">{currency(totals.totalCobrado)}</p>
+            <p className="mt-1 text-4xl font-bold tracking-tight text-white">{currency(totals.totalCobrado.ars)}</p>
+            {totals.totalCobrado.usd > 0 && (
+              <p className="mt-1 text-xl font-semibold text-emerald-100">{currencyUSD(totals.totalCobrado.usd)}</p>
+            )}
             <p className="mt-1 text-xs text-emerald-200 uppercase tracking-widest">Ganado hasta ahora</p>
           </div>
           {/* Pendiente + Total Campañas */}
@@ -1277,7 +1337,10 @@ export default function Page() {
             {/* Pendiente — naranja */}
             <div style={{borderRadius:20, border:"1px solid rgba(249,115,22,0.25)", background:"rgba(249,115,22,0.1)", padding:16}}>
               <p style={{fontSize:12, fontWeight:500, color:"rgba(253,186,116,0.7)"}}>Pendiente de cobro</p>
-              <p style={{marginTop:4, fontSize:22, fontWeight:700, color:"#fb923c"}}>{currency(totals.totalPendiente)}</p>
+              <p style={{marginTop:4, fontSize:22, fontWeight:700, color:"#fb923c"}}>{currency(totals.totalPendiente.ars)}</p>
+              {totals.totalPendiente.usd > 0 && (
+                <p style={{marginTop:2, fontSize:13, fontWeight:600, color:"#fdba74"}}>{currencyUSD(totals.totalPendiente.usd)}</p>
+              )}
               <div style={{marginTop:8, display:"flex", flexWrap:"wrap", gap:4}}>
                 {campaigns.filter((c) => !c.cobrado).sort((a, b) => new Date(a.cobro).getTime() - new Date(b.cobro).getTime()).map((c) => (
                   <span key={c.id} style={{fontSize:10, fontWeight:600, color:"rgba(253,186,116,0.8)", background:"rgba(249,115,22,0.15)", borderRadius:999, padding:"2px 8px"}}>
@@ -1289,7 +1352,10 @@ export default function Page() {
             {/* Total Campañas — oscuro neutro */}
             <div style={{borderRadius:20, border:"1px solid rgba(255,255,255,0.08)", background:"rgba(255,255,255,0.05)", padding:16}}>
               <p style={{fontSize:12, fontWeight:500, color:"rgba(255,255,255,0.45)"}}>Total campañas</p>
-              <p style={{marginTop:4, fontSize:22, fontWeight:700, color:"rgba(255,255,255,0.9)"}}>{currency(totals.totalYo)}</p>
+              <p style={{marginTop:4, fontSize:22, fontWeight:700, color:"rgba(255,255,255,0.9)"}}>{currency(totals.totalYo.ars)}</p>
+              {totals.totalYo.usd > 0 && (
+                <p style={{marginTop:2, fontSize:13, fontWeight:600, color:"rgba(255,255,255,0.6)"}}>{currencyUSD(totals.totalYo.usd)}</p>
+              )}
               <p style={{marginTop:6, fontSize:10, color:"rgba(255,255,255,0.25)"}}>Suma de todas</p>
             </div>
           </div>
@@ -1324,7 +1390,7 @@ export default function Page() {
                     <p className="text-2xl font-bold text-white">{nextPending.marca}</p>
                     <p className="text-sm text-white/60 mt-0.5">{nextPending.campana !== "-" ? nextPending.campana : ""}</p>
                     <p className="text-xs text-white/30 mt-0.5">{nextPending.contenido}</p>
-                    <p className="mt-3 text-3xl font-bold text-emerald-400">{currency(amountValue(nextPending))}</p>
+                    <p className={`mt-3 text-3xl font-bold ${nextPending.moneda === "USD" ? "text-sky-400" : "text-emerald-400"}`}>{money(amountValue(nextPending), nextPending.moneda)}</p>
                     <p className="text-sm text-white/40 mt-1">{formatDateAR(nextPending.cobro)}</p>
                   </div>
                   <StatusBadge item={nextPending} />
@@ -1354,6 +1420,29 @@ export default function Page() {
                 </ResponsiveContainer>
               </div>
             </div>
+
+            {/* Gráfico ingresos por mes en USD — solo si hay campañas en dólares */}
+            {hasUsd && (
+              <div className="rounded-[24px] border border-white/10 bg-white/5 p-5">
+                <p className="mb-4 text-sm font-semibold text-white/50 uppercase tracking-wide flex items-center gap-2">
+                  <BarChart3 className="h-4 w-4" /> Ingresos por mes (USD)
+                </p>
+                <div className="h-[220px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={monthlyData}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.06)" />
+                      <XAxis dataKey="month" tickLine={false} axisLine={false} tick={{ fill: "rgba(255,255,255,0.35)", fontSize: 12 }} />
+                      <YAxis tickFormatter={(v) => `${v}`} tickLine={false} axisLine={false} tick={{ fill: "rgba(255,255,255,0.35)", fontSize: 12 }} />
+                      <Tooltip
+                        formatter={(value) => currencyUSD(Number(value))}
+                        contentStyle={{ background: "#1a1a2e", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 12, color: "white" }}
+                      />
+                      <Bar dataKey="totalUsd" fill="#38bdf8" radius={[10, 10, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+            )}
           </div>}
 
           {/* Tab: Campañas */}
@@ -1427,11 +1516,11 @@ export default function Page() {
                       <div className="flex items-end justify-between gap-3">
                         <div>
                           <p className="text-xs text-white/40 uppercase tracking-wide">YO</p>
-                          <p className="text-2xl font-bold text-emerald-400">{currency(item.yoCash)}</p>
+                          <p className={`text-2xl font-bold ${item.moneda === "USD" ? "text-sky-400" : "text-emerald-400"}`}>{money(item.yoCash, item.moneda)}</p>
                         </div>
                         <div className="text-right text-xs text-white/50 space-y-0.5">
-                          <p>VP: {currency(item.vpCash)}</p>
-                          <p style={{color:"#fb923c"}}>Fee: {currency(item.fee)}</p>
+                          <p>VP: {money(item.vpCash, item.moneda)}</p>
+                          <p style={{color:"#fb923c"}}>Fee: {money(item.fee, item.moneda)}</p>
                           <p>{item.tipoCobro === "transferencia" ? "Transferencia" : "Cash"} · {item.pagoA}d</p>
                         </div>
                       </div>
@@ -1499,7 +1588,7 @@ export default function Page() {
                               <div className="text-right">
                                 <p className="text-[11px] uppercase tracking-wide text-white/40">YO</p>
                                 <p className="text-sm font-bold text-emerald-400">
-                                  {currency(item.yoCash)}
+                                  {money(item.yoCash, item.moneda)}
                                 </p>
                               </div>
                               <button
@@ -1514,7 +1603,7 @@ export default function Page() {
                             <div className="flex items-center gap-2">
                               <span className="text-xs text-white/50">Pagado a Vane</span>
                               <span className="text-xs font-semibold text-amber-300/80">
-                                VP: {currency(item.vpCash)}
+                                VP: {money(item.vpCash, item.moneda)}
                               </span>
                             </div>
                             <Switch
@@ -1570,11 +1659,11 @@ export default function Page() {
                               <div className="text-right">
                                 <p className="text-[11px] uppercase tracking-wide text-white/30">YO</p>
                                 <p className="text-sm font-bold text-emerald-400/70">
-                                  {currency(item.yoCash)}
+                                  {money(item.yoCash, item.moneda)}
                                 </p>
                                 <p className="text-[11px] uppercase tracking-wide text-white/30">VP</p>
                                 <p className="text-xs font-semibold text-rose-300/70">
-                                  {currency(item.vpCash)}
+                                  {money(item.vpCash, item.moneda)}
                                 </p>
                               </div>
                               <button

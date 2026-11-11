@@ -15,6 +15,7 @@ type CampaignBody = {
   pagoA?: string | number;
   cobro?: string;
   fee?: string | number;
+  moneda?: string;
   tipoCobro?: string;
   yoCash?: string | number;
   vpCash?: string | number;
@@ -60,6 +61,7 @@ function buildCampaignUrl(action: "create" | "update", body: CampaignBody): stri
     `&facturaFecha=${encodeURIComponent(String(body.facturaFecha ?? ""))}` +
     `&cobrado=${encodeURIComponent(String(body.cobrado ?? false))}` +
     `&pagadoVane=${encodeURIComponent(String(body.pagadoVane ?? false))}` +
+    `&moneda=${encodeURIComponent(body.moneda === "USD" ? "USD" : "$")}` +
     `&board=chivos`
   );
 }
