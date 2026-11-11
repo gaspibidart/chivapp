@@ -15,6 +15,8 @@ import {
   DialogTrigger,
 } from "../../components/ui/dialog";
 import { Switch } from "../../components/ui/switch";
+import { useCierres, YearClosePanel, YearHistory } from "../../components/year-closing";
+import { yearOfDate, monthOfDate, computeOpenYear, computeHistoryYears, canCloseYear } from "../../lib/years";
 import {
   ChevronDown,
   ChevronUp,
@@ -463,67 +465,104 @@ function EventCard({
 type Occurrence = {
   id: string;
   evento: string;
-  fecha: string;
+  fecha: string; // fecha de COBRO (fecha del evento + pagoA)
+  year: number; // año de la fecha de cobro (-1 si no tiene fecha)
   monto: number;
   moneda: Moneda;
   programa: Programa;
   cobrado: boolean;
 };
 
+// Cada fecha/valor de un evento es una "ocurrencia" que cuenta en el año de SU cobro.
 function flattenOccurrences(events: LuzuEvent[]): Occurrence[] {
   const result: Occurrence[] = [];
   events.forEach((ev) => {
-    ev.fechas.forEach((fecha, i) => {
-      if (!fecha) return;
+    const n = Math.max(ev.fechas.length, ev.valores.length);
+    for (let i = 0; i < n; i++) {
+      const fecha = ev.fechas[i] || "";
       const valor = ev.valores[i];
+      if (!fecha && !valor?.monto) continue;
+      const cobro = fecha ? cobroDateFor(fecha, ev.pagoA) : "";
       result.push({
         id: `${ev.id}-${i}`,
         evento: ev.evento,
-        fecha: cobroDateFor(fecha, ev.pagoA),
+        fecha: cobro,
+        year: yearOfDate(cobro),
         monto: valor?.monto || 0,
         moneda: valor?.moneda || "$",
         programa: ev.programa,
         cobrado: ev.cobrado,
       });
-    });
+    }
   });
   return result;
 }
 
-function LuzuCalendarTab({ events }: { events: LuzuEvent[] }) {
-  const occurrences = useMemo(() => flattenOccurrences(events), [events]);
-  const today = new Date();
-  const currentMonth = today.getMonth();
+const sumOcc = (items: Occurrence[]) =>
+  items.reduce(
+    (acc, o) => {
+      if (o.moneda === "USD") acc.usd += o.monto;
+      else acc.ars += o.monto;
+      return acc;
+    },
+    { ars: 0, usd: 0 }
+  );
 
-  const [expanded, setExpanded] = useState<Record<number, boolean>>(() => {
-    const init: Record<number, boolean> = {};
-    monthNames.forEach((_, i) => { init[i] = i >= currentMonth; });
-    return init;
-  });
+function LuzuCalendarTab({
+  occurrences,
+  year,
+  showNextYear = false,
+}: {
+  occurrences: Occurrence[];
+  year: number;
+  showNextYear?: boolean;
+}) {
+  const today = new Date();
+  const curYear = today.getFullYear();
+  const curMonth = today.getMonth();
+
+  const [toggled, setToggled] = useState<Record<string, boolean>>({});
+
+  type Row = { y: number; m: number; items: Occurrence[] };
+  const rows: Row[] = [];
+  for (let m = 0; m < 12; m++) {
+    rows.push({ y: year, m, items: occurrences.filter((o) => o.year === year && monthOfDate(o.fecha) === m) });
+  }
+  if (showNextYear) {
+    for (let m = 0; m < 12; m++) {
+      const items = occurrences.filter((o) => o.year === year + 1 && monthOfDate(o.fecha) === m);
+      if (items.length) rows.push({ y: year + 1, m, items });
+    }
+  }
 
   return (
     <div className="space-y-2">
-      {monthNames.map((month, index) => {
-        const items = occurrences
-          .filter((o) => parseMonth(o.fecha) === index)
-          .sort((a, b) => new Date(a.fecha).getTime() - new Date(b.fecha).getTime());
+      {rows.map(({ y, m, items: rawItems }) => {
+        const items = [...rawItems].sort((a, b) => a.fecha.localeCompare(b.fecha));
+        const key = `${y}-${m}`;
+        const isNext = y > year;
+        const isPast = y < curYear || (y === curYear && m < curMonth);
+        const isOpen = key in toggled ? toggled[key] : !isPast;
         const totalArs = items.filter((i) => i.moneda === "$").reduce((a, i) => a + i.monto, 0);
         const totalUsd = items.filter((i) => i.moneda === "USD").reduce((a, i) => a + i.monto, 0);
-        const isPast = index < currentMonth;
-        const isOpen = expanded[index];
+        const label = isNext ? `${monthNames[m]} ${y}` : monthNames[m];
 
         return (
           <div
-            key={month}
-            style={{ borderRadius: 20, border: "1px solid rgba(255,255,255,0.08)", background: isPast ? "rgba(255,255,255,0.03)" : "rgba(255,255,255,0.06)" }}
+            key={key}
+            style={{
+              borderRadius: 20,
+              border: isNext ? "1px solid rgba(167,139,250,0.35)" : "1px solid rgba(255,255,255,0.08)",
+              background: isNext ? "rgba(139,92,246,0.10)" : isPast ? "rgba(255,255,255,0.03)" : "rgba(255,255,255,0.06)",
+            }}
           >
             <button
-              onClick={() => setExpanded((prev) => ({ ...prev, [index]: !prev[index] }))}
+              onClick={() => setToggled((prev) => ({ ...prev, [key]: !isOpen }))}
               className="flex w-full items-center justify-between px-4 py-3"
             >
               <div className="flex items-center gap-3">
-                <span style={{ fontSize: 15, fontWeight: isPast ? 400 : 600, color: isPast ? "rgba(255,255,255,0.35)" : "white" }}>
-                  {month}
+                <span style={{ fontSize: 15, fontWeight: isPast ? 400 : 600, color: isNext ? "#c4b5fd" : isPast ? "rgba(255,255,255,0.35)" : "white" }}>
+                  {label}
                 </span>
                 {items.length > 0 && (
                   <span style={{ fontSize: 11, background: "rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.4)", borderRadius: 999, padding: "2px 8px" }}>
@@ -533,10 +572,10 @@ function LuzuCalendarTab({ events }: { events: LuzuEvent[] }) {
               </div>
               <div className="flex items-center gap-3">
                 <div className="text-right">
-                  <span style={{ fontSize: 14, fontWeight: 600, color: totalArs > 0 ? "#34d399" : "rgba(255,255,255,0.2)" }}>
-                    {totalArs > 0 ? currencyARS(totalArs) : "—"}
+                  <span style={{ fontSize: 14, fontWeight: 600, color: totalArs > 0 ? (isNext ? "#c4b5fd" : "#34d399") : "rgba(255,255,255,0.2)" }}>
+                    {totalArs > 0 ? currencyARS(totalArs) : totalUsd > 0 ? "" : "—"}
                   </span>
-                  {totalUsd > 0 && <p style={{ fontSize: 11, color: "#38bdf8" }}>{currencyUSD(totalUsd)}</p>}
+                  {totalUsd > 0 && <p style={{ fontSize: totalArs > 0 ? 11 : 14, fontWeight: 600, color: "#38bdf8" }}>{currencyUSD(totalUsd)}</p>}
                 </div>
                 <span style={{ color: "rgba(255,255,255,0.3)", fontSize: 12 }}>{isOpen ? "▲" : "▼"}</span>
               </div>
@@ -579,10 +618,33 @@ function LuzuCalendarTab({ events }: { events: LuzuEvent[] }) {
 // ─── Página principal ─────────────────────────────────────────────────────────
 
 export default function LuzuPage() {
-  const { events, loading, isSaving, saveEvent, toggleCobrado, toggleFactura, setFacturaFecha, deleteEvent } =
+  const { events: allEvents, loading, isSaving, saveEvent, toggleCobrado, toggleFactura, setFacturaFecha, deleteEvent } =
     useLuzuEvents();
 
-  const [activeTab, setActiveTab] = useState<"resumen" | "calendario">("resumen");
+  const cierres = useCierres("luzu");
+  const allOccurrences = useMemo(() => flattenOccurrences(allEvents), [allEvents]);
+  const dataYears = useMemo(() => allOccurrences.map((o) => o.year).filter((y) => y > 0), [allOccurrences]);
+  const openYear = useMemo(() => computeOpenYear(cierres.closed, dataYears), [cierres.closed, dataYears]);
+  const historyYears = useMemo(() => computeHistoryYears(cierres.closed, dataYears, openYear), [cierres.closed, dataYears, openYear]);
+  const lastClosedYear = cierres.closed.length ? Math.max(...cierres.closed) : null;
+
+  // Año abierto: lo que alimenta los totales (las ocurrencias sin fecha cuentan acá)
+  const openOccs = useMemo(() => allOccurrences.filter((o) => o.year === openYear || o.year === -1), [allOccurrences, openYear]);
+  const nextOccs = useMemo(() => allOccurrences.filter((o) => o.year === openYear + 1), [allOccurrences, openYear]);
+  // Eventos visibles: los que tienen al menos una fecha de cobro en el año abierto o más adelante
+  const events = useMemo(
+    () =>
+      allEvents.filter((ev) => {
+        const occs = allOccurrences.filter((o) => o.id.startsWith(`${ev.id}-`));
+        return !occs.length || occs.some((o) => o.year === -1 || o.year >= openYear);
+      }),
+    [allEvents, allOccurrences, openYear]
+  );
+  const earnedYear = useMemo(() => sumOcc(openOccs.filter((o) => o.cobrado)), [openOccs]);
+  const scheduledNext = useMemo(() => sumOcc(nextOccs), [nextOccs]);
+  const pendingCount = useMemo(() => openOccs.filter((o) => !o.cobrado).length, [openOccs]);
+
+  const [activeTab, setActiveTab] = useState<"resumen" | "calendario" | "historial">("resumen");
   const [open, setOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [form, setForm] = useState<FormState>(emptyFormState());
@@ -649,25 +711,23 @@ export default function LuzuPage() {
       aCobrarNdn: { ars: 0, usd: 0 },
     };
 
-    for (const ev of events) {
-      for (const v of ev.valores) {
-        const monto = v.monto || 0;
-        const key = v.moneda === "USD" ? "usd" : "ars";
+    for (const o of openOccs) {
+      const monto = o.monto || 0;
+      const key = o.moneda === "USD" ? "usd" : "ars";
 
-        acc.gral[key] += monto;
-        if (ev.programa === "AQN") acc.aqn[key] += monto;
-        else if (ev.programa === "NDN") acc.ndn[key] += monto;
-        else acc.otros[key] += monto;
+      acc.gral[key] += monto;
+      if (o.programa === "AQN") acc.aqn[key] += monto;
+      else if (o.programa === "NDN") acc.ndn[key] += monto;
+      else acc.otros[key] += monto;
 
-        if (!ev.cobrado) {
-          if (ev.programa === "AQN") acc.aCobrarAqn[key] += monto;
-          if (ev.programa === "NDN") acc.aCobrarNdn[key] += monto;
-        }
+      if (!o.cobrado) {
+        if (o.programa === "AQN") acc.aCobrarAqn[key] += monto;
+        if (o.programa === "NDN") acc.aCobrarNdn[key] += monto;
       }
     }
 
     return acc;
-  }, [events]);
+  }, [openOccs]);
 
   const pendientes = useMemo(() => {
     return [...events]
@@ -1013,7 +1073,7 @@ export default function LuzuPage() {
 
           {/* Tabs */}
           <div className="flex w-full gap-1 rounded-2xl p-1 md:w-fit" style={{ background: "#18181b", border: "1px solid rgba(255,255,255,0.15)" }}>
-            {(["resumen", "calendario"] as const).map((tab) => (
+            {(["resumen", "calendario", "historial"] as const).map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
@@ -1024,7 +1084,7 @@ export default function LuzuPage() {
                     : { background: "transparent", color: "rgba(255,255,255,0.65)" }
                 }
               >
-                {tab === "resumen" ? "Resumen" : "Calendario"}
+                {tab === "resumen" ? "Resumen" : tab === "calendario" ? "Calendario" : "Historial"}
               </button>
             ))}
           </div>
@@ -1082,10 +1142,35 @@ export default function LuzuPage() {
                   </div>
                 )}
               </div>
+
+              {/* Ganado en el año + cierre */}
+              <YearClosePanel
+                openYear={openYear}
+                earned={earnedYear}
+                scheduledNextYear={scheduledNext}
+                pendingCount={pendingCount}
+                canClose={canCloseYear(openYear)}
+                onClose={() => cierres.closeYear(openYear)}
+                onError={setErrorMsg}
+              />
             </div>
           )}
 
-          {activeTab === "calendario" && <LuzuCalendarTab events={events} />}
+          {activeTab === "calendario" && <LuzuCalendarTab occurrences={allOccurrences} year={openYear} showNextYear />}
+
+          {activeTab === "historial" && (
+            <YearHistory
+              years={historyYears}
+              lastClosedYear={lastClosedYear}
+              summaryFor={(y) => {
+                const items = allOccurrences.filter((o) => o.year === y);
+                return { earned: sumOcc(items.filter((o) => o.cobrado)), count: items.length };
+              }}
+              renderYear={(y) => <LuzuCalendarTab occurrences={allOccurrences} year={y} />}
+              onReopen={cierres.reopenYear}
+              onError={setErrorMsg}
+            />
+          )}
         </div>
       </div>
     </>

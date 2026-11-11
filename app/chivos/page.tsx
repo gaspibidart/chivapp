@@ -16,6 +16,8 @@ import {
 } from "../../components/ui/dialog";
 import { Checkbox } from "../../components/ui/checkbox";
 import { Switch } from "../../components/ui/switch";
+import { useCierres, YearClosePanel, YearHistory } from "../../components/year-closing";
+import { yearOfDate, monthOfDate, computeOpenYear, computeHistoryYears, canCloseYear } from "../../lib/years";
 import {
   BarChart3,
   CalendarDays,
@@ -227,10 +229,7 @@ function parseContenidoText(text: string): ContenidoState {
 // FIX: parseMonth devolvía NaN para fechas vacías/inválidas.
 // Ahora devuelve -1 en esos casos para que los filtros no se rompan.
 function parseMonth(dateString: string): number {
-  if (!dateString) return -1;
-  const d = new Date(dateString);
-  if (isNaN(d.getTime())) return -1;
-  return d.getMonth();
+  return monthOfDate(dateString);
 }
 
 const parseMoneyInput = (value: string | number): number => {
@@ -781,54 +780,79 @@ function ErrorToast({
 
 // ─── Componente: CalendarioTab ────────────────────────────────────────────────
 
-function CalendarioTab({ campaigns }: { campaigns: Campaign[] }) {
+function CalendarioTab({
+  campaigns,
+  year,
+  showNextYear = false,
+}: {
+  campaigns: Campaign[];
+  year: number;
+  showNextYear?: boolean;
+}) {
   const today = new Date();
-  const currentMonth = today.getMonth();
+  const curYear = today.getFullYear();
+  const curMonth = today.getMonth();
 
-  const [expanded, setExpanded] = useState<Record<number, boolean>>(() => {
-    const init: Record<number, boolean> = {};
-    monthNames.forEach((_, i) => { init[i] = i >= currentMonth; });
-    return init;
-  });
+  // Los meses se abren/cierran a mano; si no se tocó, por defecto se abren los que no pasaron.
+  const [toggled, setToggled] = useState<Record<string, boolean>>({});
+
+  type Row = { y: number; m: number; items: Campaign[] };
+  const rows: Row[] = [];
+  for (let m = 0; m < 12; m++) {
+    rows.push({ y: year, m, items: campaigns.filter((c) => yearOfDate(c.cobro) === year && monthOfDate(c.cobro) === m) });
+  }
+  if (showNextYear) {
+    for (let m = 0; m < 12; m++) {
+      const items = campaigns.filter((c) => yearOfDate(c.cobro) === year + 1 && monthOfDate(c.cobro) === m);
+      if (items.length) rows.push({ y: year + 1, m, items });
+    }
+  }
 
   return (
     <div className="space-y-2">
-      {monthNames.map((month, index) => {
-        const items = campaigns.filter((c) => parseMonth(c.cobro) === index).sort((a, b) => new Date(a.cobro).getTime() - new Date(b.cobro).getTime());
+      {rows.map(({ y, m, items: rawItems }) => {
+        const items = [...rawItems].sort((a, b) => a.cobro.localeCompare(b.cobro));
+        const key = `${y}-${m}`;
+        const isNext = y > year;
+        const isPast = y < curYear || (y === curYear && m < curMonth);
+        const isOpen = key in toggled ? toggled[key] : !isPast;
         const monthTotals = sumByMoneda(items);
-        const isPast = index < currentMonth;
-        const isOpen = expanded[index];
+        const label = isNext ? `${monthNames[m]} ${y}` : monthNames[m];
 
         return (
           <div
-            key={month}
-            style={{borderRadius:20, border:"1px solid rgba(255,255,255,0.08)", background: isPast ? "rgba(255,255,255,0.03)" : "rgba(255,255,255,0.06)"}}
+            key={key}
+            style={{
+              borderRadius: 20,
+              border: isNext ? "1px solid rgba(167,139,250,0.35)" : "1px solid rgba(255,255,255,0.08)",
+              background: isNext ? "rgba(139,92,246,0.10)" : isPast ? "rgba(255,255,255,0.03)" : "rgba(255,255,255,0.06)",
+            }}
           >
             {/* Header siempre visible — toca para colapsar/expandir */}
             <button
-              onClick={() => setExpanded((prev) => ({ ...prev, [index]: !prev[index] }))}
+              onClick={() => setToggled((prev) => ({ ...prev, [key]: !isOpen }))}
               className="flex w-full items-center justify-between px-4 py-3"
             >
               <div className="flex items-center gap-3">
-                <span style={{fontSize:15, fontWeight: isPast ? 400 : 600, color: isPast ? "rgba(255,255,255,0.35)" : "white"}}>
-                  {month}
+                <span style={{ fontSize: 15, fontWeight: isPast ? 400 : 600, color: isNext ? "#c4b5fd" : isPast ? "rgba(255,255,255,0.35)" : "white" }}>
+                  {label}
                 </span>
                 {items.length > 0 && (
-                  <span style={{fontSize:11, background:"rgba(255,255,255,0.08)", color:"rgba(255,255,255,0.4)", borderRadius:999, padding:"2px 8px"}}>
+                  <span style={{ fontSize: 11, background: "rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.4)", borderRadius: 999, padding: "2px 8px" }}>
                     {items.length}
                   </span>
                 )}
               </div>
               <div className="flex items-center gap-3">
                 <div className="text-right">
-                  <span style={{fontSize:14, fontWeight:600, color: monthTotals.ars > 0 ? "#34d399" : "rgba(255,255,255,0.2)"}}>
+                  <span style={{ fontSize: 14, fontWeight: 600, color: monthTotals.ars > 0 ? (isNext ? "#c4b5fd" : "#34d399") : "rgba(255,255,255,0.2)" }}>
                     {monthTotals.ars > 0 ? currency(monthTotals.ars) : monthTotals.usd > 0 ? "" : "—"}
                   </span>
                   {monthTotals.usd > 0 && (
-                    <p style={{fontSize:monthTotals.ars > 0 ? 11 : 14, fontWeight:600, color:"#38bdf8"}}>{currencyUSD(monthTotals.usd)}</p>
+                    <p style={{ fontSize: monthTotals.ars > 0 ? 11 : 14, fontWeight: 600, color: "#38bdf8" }}>{currencyUSD(monthTotals.usd)}</p>
                   )}
                 </div>
-                <span style={{color:"rgba(255,255,255,0.3)", fontSize:12}}>{isOpen ? "▲" : "▼"}</span>
+                <span style={{ color: "rgba(255,255,255,0.3)", fontSize: 12 }}>{isOpen ? "▲" : "▼"}</span>
               </div>
             </button>
 
@@ -837,16 +861,16 @@ function CalendarioTab({ campaigns }: { campaigns: Campaign[] }) {
               <div className="space-y-2 px-4 pb-4">
                 {items.length ? (
                   items.map((item) => (
-                    <div key={item.id} style={{borderRadius:14, border:"1px solid rgba(255,255,255,0.08)", background:"rgba(255,255,255,0.04)", padding:"12px 14px"}}>
+                    <div key={item.id} style={{ borderRadius: 14, border: "1px solid rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.04)", padding: "12px 14px" }}>
                       <div className="flex items-center justify-between gap-3">
                         <div className="min-w-0">
-                          <p style={{fontWeight:600, color:"white", fontSize:14}}>{item.marca}</p>
-                          {item.campana !== "-" && <p style={{fontSize:12, color:"rgba(255,255,255,0.55)", marginTop:1}}>{item.campana}</p>}
-                          <p style={{fontSize:11, color:"rgba(255,255,255,0.3)", marginTop:1}}>{item.contenido}</p>
+                          <p style={{ fontWeight: 600, color: "white", fontSize: 14 }}>{item.marca}</p>
+                          {item.campana !== "-" && <p style={{ fontSize: 12, color: "rgba(255,255,255,0.55)", marginTop: 1 }}>{item.campana}</p>}
+                          <p style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", marginTop: 1 }}>{item.contenido}</p>
                         </div>
                         <div className="text-right shrink-0">
-                          <p style={{fontSize:15, fontWeight:700, color: item.moneda === "USD" ? "#38bdf8" : "#34d399"}}>{money(amountValue(item), item.moneda)}</p>
-                          <p style={{fontSize:11, color:"rgba(255,255,255,0.3)"}}>{formatDateAR(item.cobro)}</p>
+                          <p style={{ fontSize: 15, fontWeight: 700, color: item.moneda === "USD" ? "#38bdf8" : "#34d399" }}>{money(amountValue(item), item.moneda)}</p>
+                          <p style={{ fontSize: 11, color: "rgba(255,255,255,0.3)" }}>{formatDateAR(item.cobro)}</p>
                         </div>
                       </div>
                       <div className="mt-2 flex justify-end">
@@ -855,7 +879,7 @@ function CalendarioTab({ campaigns }: { campaigns: Campaign[] }) {
                     </div>
                   ))
                 ) : (
-                  <p style={{fontSize:13, color:"rgba(255,255,255,0.25)", paddingBottom:4}}>Sin campañas.</p>
+                  <p style={{ fontSize: 13, color: "rgba(255,255,255,0.25)", paddingBottom: 4 }}>Sin campañas.</p>
                 )}
               </div>
             )}
@@ -870,7 +894,7 @@ function CalendarioTab({ campaigns }: { campaigns: Campaign[] }) {
 
 export default function Page() {
   const {
-    campaigns,
+    campaigns: allCampaigns,
     loading,
     isSaving,
     toggleFactura,
@@ -882,6 +906,9 @@ export default function Page() {
     exportData,
     importData,
   } = useCampaigns();
+
+  const cierres = useCierres("chivos");
+  const dataYears = useMemo(() => allCampaigns.map((c) => yearOfDate(c.cobro)).filter((y) => y > 0), [allCampaigns]);
 
   const [search, setSearch] = useState("");
   const [monthFilter, setMonthFilter] = useState("all");
@@ -895,7 +922,7 @@ export default function Page() {
 
   // Estado para el diálogo de confirmación de borrado
   const [searchOpen, setSearchOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<"dashboard"|"campanas"|"calendario">("dashboard");
+  const [activeTab, setActiveTab] = useState<"dashboard"|"campanas"|"calendario"|"historial">("dashboard");
   const [confirmDelete, setConfirmDelete] = useState<number | null>(null);
   // Estado para errores inline (reemplaza window.alert)
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -916,10 +943,21 @@ export default function Page() {
     return { previewYo: yo, previewVp: vp };
   }, [form.fee, form.tipoCobro]);
 
+  // ─── Años: cada campaña pertenece al año de su fecha de cobro ─────────────
+  const openYear = useMemo(() => computeOpenYear(cierres.closed, dataYears), [cierres.closed, dataYears]);
+  const historyYears = useMemo(() => computeHistoryYears(cierres.closed, dataYears, openYear), [cierres.closed, dataYears, openYear]);
+  // Año abierto: lo que alimenta KPIs, gráfico y "Ganado en el año"
+  const campaigns = useMemo(() => allCampaigns.filter((c) => yearOfDate(c.cobro) === openYear), [allCampaigns, openYear]);
+  // Agendado para el año siguiente (cobros que caen después de diciembre)
+  const nextYearCampaigns = useMemo(() => allCampaigns.filter((c) => yearOfDate(c.cobro) === openYear + 1), [allCampaigns, openYear]);
+  // Lista de campañas: año abierto + futuros (los años cerrados van al Historial)
+  const activeCampaigns = useMemo(() => allCampaigns.filter((c) => yearOfDate(c.cobro) === -1 || yearOfDate(c.cobro) >= openYear), [allCampaigns, openYear]);
+  const lastClosedYear = cierres.closed.length ? Math.max(...cierres.closed) : null;
+
   // ─── Filtros ──────────────────────────────────────────────────────────────
 
   const filteredCampaigns = useMemo(() => {
-    return campaigns.filter((c) => {
+    return activeCampaigns.filter((c) => {
       const textOk = [c.marca, c.campana, c.contenido]
         .join(" ")
         .toLowerCase()
@@ -943,7 +981,7 @@ export default function Page() {
 
       return textOk && monthOk && statusOk;
     });
-  }, [campaigns, search, monthFilter, statusFilter]);
+  }, [activeCampaigns, search, monthFilter, statusFilter]);
 
   const upcomingCampaigns = useMemo(() => {
     const today = new Date();
@@ -996,11 +1034,15 @@ export default function Page() {
   const nextPending = useMemo(() => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    return [...campaigns]
+    return [...activeCampaigns]
       .filter((c) => !c.cobrado && !!c.cobro)
       .filter((c) => new Date(c.cobro).getTime() >= today.getTime())
       .sort((a, b) => new Date(a.cobro).getTime() - new Date(b.cobro).getTime())[0];
-  }, [campaigns]);
+  }, [activeCampaigns]);
+
+  const earnedYear = useMemo(() => sumByMoneda(campaigns.filter((c) => c.cobrado)), [campaigns]);
+  const scheduledNext = useMemo(() => sumByMoneda(nextYearCampaigns), [nextYearCampaigns]);
+  const pendingCount = useMemo(() => campaigns.filter((c) => !c.cobrado).length, [campaigns]);
 
   // ─── Handlers del formulario ──────────────────────────────────────────────
 
@@ -1364,7 +1406,7 @@ export default function Page() {
         {/* Tabs */}
         <div className="space-y-6">
           <div className="flex w-full gap-1 rounded-2xl p-1 md:w-fit" style={{background:"#18181b", border:"1px solid rgba(255,255,255,0.15)"}}>
-            {(["dashboard","campanas","calendario"] as const).map((tab) => (
+            {(["dashboard","campanas","calendario","historial"] as const).map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
@@ -1374,7 +1416,7 @@ export default function Page() {
                   : {background:"transparent", color:"rgba(255,255,255,0.65)"}
                 }
               >
-                {tab === "dashboard" ? "Dashboard" : tab === "campanas" ? "Campañas" : "Calendario"}
+                {tab === "dashboard" ? "Dashboard" : tab === "campanas" ? "Campañas" : tab === "calendario" ? "Calendario" : "Historial"}
               </button>
             ))}
           </div>
@@ -1403,7 +1445,7 @@ export default function Page() {
             {/* Gráfico ingresos por mes */}
             <div className="rounded-[24px] border border-white/10 bg-white/5 p-5">
               <p className="mb-4 text-sm font-semibold text-white/50 uppercase tracking-wide flex items-center gap-2">
-                <BarChart3 className="h-4 w-4" /> Ingresos por mes
+                <BarChart3 className="h-4 w-4" /> Ingresos por mes · {openYear}
               </p>
               <div className="h-[220px]">
                 <ResponsiveContainer width="100%" height="100%">
@@ -1425,7 +1467,7 @@ export default function Page() {
             {hasUsd && (
               <div className="rounded-[24px] border border-white/10 bg-white/5 p-5">
                 <p className="mb-4 text-sm font-semibold text-white/50 uppercase tracking-wide flex items-center gap-2">
-                  <BarChart3 className="h-4 w-4" /> Ingresos por mes (USD)
+                  <BarChart3 className="h-4 w-4" /> Ingresos por mes {openYear} (USD)
                 </p>
                 <div className="h-[220px]">
                   <ResponsiveContainer width="100%" height="100%">
@@ -1443,6 +1485,17 @@ export default function Page() {
                 </div>
               </div>
             )}
+
+            {/* Ganado en el año + cierre */}
+            <YearClosePanel
+              openYear={openYear}
+              earned={earnedYear}
+              scheduledNextYear={scheduledNext}
+              pendingCount={pendingCount}
+              canClose={canCloseYear(openYear)}
+              onClose={() => cierres.closeYear(openYear)}
+              onError={setErrorMsg}
+            />
           </div>}
 
           {/* Tab: Campañas */}
@@ -1686,7 +1739,22 @@ export default function Page() {
           </div>}
 
           {/* Tab: Calendario */}
-          {activeTab === "calendario" && <CalendarioTab campaigns={campaigns} />}
+          {activeTab === "calendario" && <CalendarioTab campaigns={allCampaigns} year={openYear} showNextYear />}
+
+          {/* Tab: Historial */}
+          {activeTab === "historial" && (
+            <YearHistory
+              years={historyYears}
+              lastClosedYear={lastClosedYear}
+              summaryFor={(y) => {
+                const items = allCampaigns.filter((c) => yearOfDate(c.cobro) === y);
+                return { earned: sumByMoneda(items.filter((c) => c.cobrado)), count: items.length };
+              }}
+              renderYear={(y) => <CalendarioTab campaigns={allCampaigns} year={y} />}
+              onReopen={cierres.reopenYear}
+              onError={setErrorMsg}
+            />
+          )}
         </div>
 
         {/* Respaldo — discreto */}
